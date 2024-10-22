@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'Views/RegisterScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -86,17 +87,40 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               onPressed: () { },
               child: Text('Register'),
-            )
-
-
+            ),
+            TextButton(
+              style: ButtonStyle(
+                foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+              ),
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen(title: 'register',)));
+              },
+              child: Text('Create New Account'),
+            ),
+          TextButton(
+          onPressed: () => showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('AlertDialog Title'),
+        content: const Text('AlertDialog description'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'Cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'OK'),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    ),
+    child: const Text('Show Dialog'),
+    )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+
     );
   }
 }
