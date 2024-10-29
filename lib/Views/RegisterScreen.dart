@@ -1,3 +1,4 @@
+import 'package:final_project/Utills/Utills.dart';
 import 'package:flutter/material.dart';
 
 
@@ -15,7 +16,9 @@ class RegisterScreen extends StatefulWidget {
 
 class RegisterScreenPageState extends State<RegisterScreen> {
 
-
+  final TextEditingController _txtEmail = TextEditingController();
+  final TextEditingController _txtPassword = TextEditingController();
+  final TextEditingController _txtUserName = TextEditingController();
 
 
   @override
@@ -36,10 +39,12 @@ class RegisterScreenPageState extends State<RegisterScreen> {
           children: <Widget>[
             Text('Email',),
             TextField(
+              //controller: ,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: 'Email',
               ),
+              controller: _txtEmail,
             ),
             Text('Password',),
             TextField(
@@ -47,19 +52,28 @@ class RegisterScreenPageState extends State<RegisterScreen> {
                 border: OutlineInputBorder(),
                 hintText: 'Password',
               ),
+              controller: _txtPassword,
+
             ),
-            Text('First Name',),
+            Text('User Name',),
             TextField(
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: 'First Name',
               ),
+              controller: _txtUserName,
+
             ),
+
             TextButton(
               style: ButtonStyle(
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
               ),
-              onPressed: () { },
+              onPressed: () {
+                var uti = new Utils();
+                uti.showMyDialog(context, _txtUserName.text, _txtEmail.text);
+
+              },
               child: Text('Register'),
             )
 
