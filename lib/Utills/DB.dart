@@ -1,11 +1,12 @@
 import 'package:mysql1/mysql1.dart';
 
 var _conn;
+/*
 void main(){
   showUsers();
   insertUser('dsa','sad','asd');
 }
-
+*/
 
 // for(int i=0; i<100; 1++)
 
