@@ -96,13 +96,7 @@ void insertUserFunc()
           ),
           controller: _txtPhoneNumber,),
 
-            Text('ID'),
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'ID',
-              ),
-              controller: _txtID,),
+
 
 
             TextButton(
