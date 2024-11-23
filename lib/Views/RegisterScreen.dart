@@ -22,6 +22,8 @@ class RegisterScreenPageState extends State<RegisterScreen> {
   final TextEditingController _txtEmail = TextEditingController();
   final TextEditingController _txtPassword = TextEditingController();
   final TextEditingController _txtUserName = TextEditingController();
+  final TextEditingController _txtPhoneNumber = TextEditingController();
+  final TextEditingController _txtID = TextEditingController();
 
 void insertUserFunc()
 {
@@ -29,8 +31,10 @@ void insertUserFunc()
     {
       var user= new User();
       user.name=_txtUserName.text;
-      user.phone =_txtEmail.text;
-      insertUser(user);
+      user.phone =_txtPhoneNumber.text;
+      user.id=_txtID.text;
+      user.email=_txtEmail.text;
+      user.password=_txtPassword.text;
     }
 }
   @override
@@ -49,6 +53,22 @@ void insertUserFunc()
 
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Text('User Name',),
+            TextField(
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'First Name',
+              ),
+              controller: _txtUserName,
+
+            ),
+            Text('ID'),
+            TextField(
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'ID',
+              ),
+              controller: _txtID,),
             Text('Email',),
             TextField(
               decoration: InputDecoration(
@@ -63,18 +83,27 @@ void insertUserFunc()
                 border: OutlineInputBorder(),
                 hintText: 'Password',
               ),
-              controller: _txtPassword,
+
+              controller: _txtPhoneNumber,
+
 
             ),
-            Text('User Name',),
+        Text('Phone Number'),
+        TextField(
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Phone Number',
+          ),
+          controller: _txtPhoneNumber,),
+
+            Text('ID'),
             TextField(
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'First Name',
+                hintText: 'ID',
               ),
-              controller: _txtUserName,
+              controller: _txtID,),
 
-            ),
 
             TextButton(
               style: ButtonStyle(
@@ -86,7 +115,7 @@ void insertUserFunc()
                // uti.showMyDialog(context, _txtUserName.text, _txtEmail.text);
 
               },
-              child: Text('Register'),
+              child: Text('NEXT'),
             )
 
             

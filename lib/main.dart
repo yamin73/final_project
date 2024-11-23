@@ -74,19 +74,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 hintText: 'Password',
               ),
             ),
-            Text('First Name',),
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'First Name',
-              ),
-            ),
+
             TextButton(
               style: ButtonStyle(
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
               ),
               onPressed: () { },
-              child: Text('Register'),
+              child: Text('LOG IN'),
             ),
             TextButton(
               style: ButtonStyle(
@@ -97,26 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               child: Text('Create New Account'),
             ),
-          TextButton(
-          onPressed: () => showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('AlertDialog Title'),
-        content: const Text('AlertDialog description'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'Cancel'),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'OK'),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    ),
-    child: const Text('Show Dialog'),
-    )
+
           ],
         ),
       ),
