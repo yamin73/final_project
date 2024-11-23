@@ -35,6 +35,7 @@ void insertUserFunc()
       user.id=_txtID.text;
       user.email=_txtEmail.text;
       user.password=_txtPassword.text;
+      insertUser(user);
     }
 }
   @override
@@ -57,7 +58,7 @@ void insertUserFunc()
             TextField(
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'First Name',
+                hintText: '* First Name',
               ),
               controller: _txtUserName,
 
@@ -66,14 +67,14 @@ void insertUserFunc()
             TextField(
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'ID',
+                hintText: '* ID',
               ),
               controller: _txtID,),
             Text('Email',),
             TextField(
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'Email',
+                hintText: '* Email',
               ),
               controller: _txtEmail,
             ),
@@ -81,7 +82,7 @@ void insertUserFunc()
             TextField(
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'Password',
+                hintText: '* Password',
               ),
 
               controller: _txtPhoneNumber,
@@ -92,7 +93,7 @@ void insertUserFunc()
         TextField(
           decoration: InputDecoration(
             border: OutlineInputBorder(),
-            hintText: 'Phone Number',
+            hintText: '* Phone Number',
           ),
           controller: _txtPhoneNumber,),
 
