@@ -1,5 +1,8 @@
+import 'package:final_project/Utills/DB.dart';
 import 'package:final_project/Utills/Utills.dart';
 import 'package:flutter/material.dart';
+
+import '../Models/UserModel.dart';
 
 
 
@@ -20,7 +23,16 @@ class RegisterScreenPageState extends State<RegisterScreen> {
   final TextEditingController _txtPassword = TextEditingController();
   final TextEditingController _txtUserName = TextEditingController();
 
-
+void insertUserFunc()
+{
+  if(_txtEmail.text!="" && _txtUserName.text!="" && _txtPassword.text!="")
+    {
+      var user= new User();
+      user.name=_txtUserName.text;
+      user.phone =_txtEmail.text;
+      insertUser(user);
+    }
+}
   @override
   Widget build(BuildContext context) {
 
@@ -39,7 +51,6 @@ class RegisterScreenPageState extends State<RegisterScreen> {
           children: <Widget>[
             Text('Email',),
             TextField(
-              //controller: ,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: 'Email',
@@ -70,14 +81,15 @@ class RegisterScreenPageState extends State<RegisterScreen> {
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
               ),
               onPressed: () {
-                var uti = new Utils();
-                uti.showMyDialog(context, _txtUserName.text, _txtEmail.text);
+
+               // var uti = new Utils();
+               // uti.showMyDialog(context, _txtUserName.text, _txtEmail.text);
 
               },
               child: Text('Register'),
             )
 
-
+            
           ],
         ),
       ),
