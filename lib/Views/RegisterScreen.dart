@@ -1,5 +1,6 @@
 import 'package:final_project/Utills/DB.dart';
 import 'package:final_project/Utills/Utills.dart';
+import 'package:final_project/Views/CarScreen.dart';
 import 'package:flutter/material.dart';
 
 import '../Models/UserModel.dart';
@@ -105,6 +106,7 @@ void insertUserFunc()
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
               ),
               onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => Carscreen(title: 'Car Screen',)));
 
                // var uti = new Utils();
                // uti.showMyDialog(context, _txtUserName.text, _txtEmail.text);

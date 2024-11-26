@@ -87,7 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
               ),
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen(title: 'register',)));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen(title: 'Create New Account',)));
               },
               child: Text('Create New Account'),
             ),

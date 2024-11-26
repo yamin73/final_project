@@ -1,19 +1,18 @@
 class Service {
   Service({
-    this.id = "",
     this.name = "",
+    this.date= "",
+
 
   });
-  String id;
   String name;
+  String date;
 
   factory Service.fromJson(Map<String, dynamic> json) => Service(
-        id: json["id"],
         name: json["name"],
 
       );
   Map<String, dynamic> tojson() => {
-        id: ["id"],
         name: ["name"],
 
       };
