@@ -1,125 +1,246 @@
 import 'package:final_project/Utills/DB.dart';
 import 'package:final_project/Utills/Utills.dart';
 import 'package:final_project/Views/CarScreen.dart';
+import 'package:final_project/main.dart';
 import 'package:flutter/material.dart';
 
 import '../Models/UserModel.dart';
 
 
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key, required this.title});
 
-
-
-  final String title;
-
+class RegisterPage extends StatefulWidget {
   @override
-  State<RegisterScreen> createState() => RegisterScreenPageState();
+  _RegisterPageState createState() => _RegisterPageState();
 }
 
-class RegisterScreenPageState extends State<RegisterScreen> {
+class _RegisterPageState extends State<RegisterPage> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
-  final TextEditingController _txtEmail = TextEditingController();
-  final TextEditingController _txtPassword = TextEditingController();
-  final TextEditingController _txtUserName = TextEditingController();
-  final TextEditingController _txtPhoneNumber = TextEditingController();
-  final TextEditingController _txtID = TextEditingController();
-
-void insertUserFunc()
-{
-  if(_txtEmail.text!="" && _txtUserName.text!="" && _txtPassword.text!="")
-    {
-      var user= new User();
-      user.name=_txtUserName.text;
-      user.phone =_txtPhoneNumber.text;
-      user.id=_txtID.text;
-      user.email=_txtEmail.text;
-      user.password=_txtPassword.text;
-      insertUser(user);
+  void _register() {
+    // Implement registration logic
+    if (_passwordController.text == _confirmPasswordController.text) {
+      print('Name: ${_nameController.text}');
+      print('Email: ${_emailController.text}');
+      print('Password: ${_passwordController.text}');
+    } else {
+      // Show error that passwords don't match
     }
-}
+  }
+
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      appBar: AppBar(
-
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-
-        title: Text(widget.title),
-      ),
-      body: Center(
-
-        child: Column(
-
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('User Name',),
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: '* First Name',
-              ),
-              controller: _txtUserName,
-
-            ),
-            Text('ID'),
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: '* ID',
-              ),
-              controller: _txtID,),
-            Text('Email',),
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: '* Email',
-              ),
-              controller: _txtEmail,
-            ),
-            Text('Password',),
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: '* Password',
-              ),
-
-              controller: _txtPhoneNumber,
-
-
-            ),
-        Text('Phone Number'),
-        TextField(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: '* Phone Number',
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF4568DC),
+              Color(0xFF6A11CB),
+            ],
           ),
-          controller: _txtPhoneNumber,),
-
-
-
-
-            TextButton(
-              style: ButtonStyle(
-                foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
-              ),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => Carscreen(title: 'Car Screen',)));
-
-               // var uti = new Utils();
-               // uti.showMyDialog(context, _txtUserName.text, _txtEmail.text);
-
-              },
-              child: Text('NEXT'),
-            )
-
-            
-          ],
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: 60),
+                Text(
+                  'Create Account',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 30),
+                Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.person_outline),
+                            hintText: 'Full Name',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        TextField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.email_outlined),
+                            hintText: 'Email Address',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        SizedBox(height: 20),
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.lock_outline),
+                            hintText: 'Password',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        TextField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPassword,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.lock_outline),
+                            hintText: 'Confirm Password',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                  _obscureConfirmPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 30),
+                        ElevatedButton(
+                          onPressed: _register,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF4568DC),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            minimumSize: Size(double.infinity, 50),
+                          ),
+                          child: Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.white54)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        'Or Sign Up With',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Colors.white54)),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildSocialButton(Icons.g_mobiledata),
+                    SizedBox(width: 20),
+                    _buildSocialButton(Icons.apple),
+                    SizedBox(width: 20),
+                    _buildSocialButton(Icons.facebook),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Already have an account? ',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+                        // Navigate to login page
+                      },
+                      child: Text(
+                        'Sign In',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
+    );
+  }
 
+  Widget _buildSocialButton(IconData icon) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.blue),
+        onPressed: () {
+          // Social signup logic
+        },
+      ),
     );
   }
 }
