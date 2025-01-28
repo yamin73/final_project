@@ -1,6 +1,7 @@
 import 'package:final_project/Utills/DB.dart';
 import 'package:final_project/Utills/Utills.dart';
 import 'package:final_project/Views/CarScreen.dart';
+import 'package:final_project/Views/HomePage.dart';
 import 'package:final_project/main.dart';
 import 'package:flutter/material.dart';
 
@@ -145,7 +146,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         SizedBox(height: 30),
                         ElevatedButton(
-                          onPressed: _register,
+                          onPressed: (){
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+                            },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF4568DC),
                             padding: EdgeInsets.symmetric(vertical: 16),
