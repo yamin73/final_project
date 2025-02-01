@@ -1,4 +1,4 @@
-import 'package:final_project/Views/HomePage.dart';
+import 'package:final_project/Views/HomePageScreen.dart';
 import 'package:flutter/material.dart';
 import 'Views/RegisterScreen.dart';
 
@@ -19,6 +19,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
+      debugShowCheckedModeBanner: false,
       home:  LoginPage(),
     );
   }
@@ -39,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
     // Implement login logic
     print('Email: ${_emailController.text}');
     print('Password: ${_passwordController.text}');
+    Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
   }
 
   @override
