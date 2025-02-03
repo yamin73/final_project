@@ -32,10 +32,95 @@ class _BookingScreenState extends State<BookingScreen> {
 
   // قائمة بجميع موديلات السيارات
   final Map<String, List<String>> carModels = {
-    'Toyota': ['Camry', 'Corolla', 'Land Cruiser', 'RAV4', 'Prius'],
-    'Honda': ['Civic', 'Accord', 'CR-V', 'Pilot', 'Odyssey'],
-    'Nissan': ['Altima', 'Maxima', 'Patrol', 'Sentra', 'Rogue'],
-    // ... يمكنك إضافة المزيد من الموديلات لكل ماركة
+    'Toyota': [
+      'Camry', 'Corolla', 'Land Cruiser', 'RAV4', 'Prius', 'Highlander', 'Tacoma',
+      'Tundra', '4Runner', 'Sienna', 'Avalon', 'C-HR', 'Venza', 'Sequoia', 'GR Supra'
+    ],
+    'Honda': [
+      'Civic', 'Accord', 'CR-V', 'Pilot', 'Odyssey', 'HR-V', 'Ridgeline',
+      'Passport', 'Insight', 'Fit', 'Element', 'CR-Z'
+    ],
+    'Nissan': [
+      'Altima', 'Maxima', 'Patrol', 'Sentra', 'Rogue', 'Murano', 'Pathfinder',
+      'Frontier', 'Titan', 'Kicks', 'Armada', 'GT-R', '370Z', 'Leaf'
+    ],
+    'Mercedes': [
+      'A-Class', 'C-Class', 'E-Class', 'S-Class', 'GLA', 'GLB', 'GLC', 'GLE',
+      'GLS', 'AMG GT', 'CLA', 'CLS', 'G-Class', 'EQS', 'EQE'
+    ],
+    'BMW': [
+      '1 Series', '2 Series', '3 Series', '4 Series', '5 Series', '6 Series',
+      '7 Series', '8 Series', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'i3', 'i4', 'i8'
+    ],
+    'Audi': [
+      'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'TT',
+      'R8', 'e-tron', 'RS6', 'RS7', 'S3', 'S4', 'S5'
+    ],
+    'Ford': [
+      'F-150', 'Mustang', 'Explorer', 'Escape', 'Edge', 'Expedition', 'Ranger',
+      'Bronco', 'Bronco Sport', 'Maverick', 'Mach-E', 'Transit', 'EcoSport'
+    ],
+    'Chevrolet': [
+      'Silverado', 'Tahoe', 'Suburban', 'Equinox', 'Traverse', 'Malibu', 'Camaro',
+      'Corvette', 'Blazer', 'Trax', 'Colorado', 'Spark', 'Bolt EV'
+    ],
+    'Volkswagen': [
+      'Golf', 'Jetta', 'Passat', 'Tiguan', 'Atlas', 'ID.4', 'Arteon', 'Taos',
+      'Golf GTI', 'Golf R', 'Atlas Cross Sport', 'e-Golf'
+    ],
+    'Hyundai': [
+      'Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Palisade', 'Kona', 'Venue',
+      'Accent', 'Ioniq', 'Nexo', 'Veloster', 'Genesis'
+    ],
+    'Kia': [
+      'Forte', 'Optima/K5', 'Sportage', 'Sorento', 'Telluride', 'Soul', 'Seltos',
+      'Carnival', 'Niro', 'EV6', 'Stinger', 'Rio'
+    ],
+    'Volvo': [
+      'S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90', 'C40',
+      'Polestar 1', 'Polestar 2'
+    ],
+    'Lexus': [
+      'IS', 'ES', 'GS', 'LS', 'UX', 'NX', 'RX', 'GX', 'LX', 'RC',
+      'LC', 'RCF', 'LFA'
+    ],
+    'Tesla': [
+      'Model 3', 'Model Y', 'Model S', 'Model X', 'Cybertruck', 'Roadster'
+    ],
+    'Porsche': [
+      '911', 'Cayenne', 'Panamera', 'Macan', 'Taycan', '718 Cayman',
+      '718 Boxster', '918 Spyder'
+    ],
+    'Jaguar': [
+      'XE', 'XF', 'F-TYPE', 'E-PACE', 'F-PACE', 'I-PACE', 'XJ'
+    ],
+    'Land Rover': [
+      'Range Rover', 'Range Rover Sport', 'Range Rover Velar', 'Range Rover Evoque',
+      'Discovery', 'Discovery Sport', 'Defender'
+    ],
+    'Acura': [
+      'ILX', 'TLX', 'RDX', 'MDX', 'NSX', 'RSX', 'TSX', 'RLX'
+    ],
+    'Infiniti': [
+      'Q50', 'Q60', 'QX50', 'QX55', 'QX60', 'QX80'
+    ],
+    'Genesis': [
+      'G70', 'G80', 'G90', 'GV70', 'GV80', 'GV60'
+    ],
+    'Maserati': [
+      'Ghibli', 'Quattroporte', 'Levante', 'MC20', 'Grecale'
+    ],
+    'Alfa Romeo': [
+      'Giulia', 'Stelvio', '4C', 'Tonale'
+    ],
+    'Subaru': [
+      'Impreza', 'Legacy', 'Outback', 'Forester', 'Crosstrek', 'Ascent',
+      'WRX', 'BRZ'
+    ],
+    'Mazda': [
+      'Mazda3', 'Mazda6', 'CX-3', 'CX-30', 'CX-5', 'CX-9', 'MX-5 Miata',
+      'CX-50'
+    ]
   };
 
   // قائمة السنوات

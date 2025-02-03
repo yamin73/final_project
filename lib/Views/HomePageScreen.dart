@@ -218,6 +218,8 @@ class HomePage extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
             label: 'History',
+
+
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
