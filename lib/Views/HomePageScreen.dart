@@ -6,6 +6,7 @@ import 'BookingScreen.dart';
 import 'homeView.dart';
 import 'HistoryScreen.dart';
 import 'BookingScreen.dart';
+import 'settingScreen.dart';
 
 import 'package:flutter/material.dart';
 
@@ -24,7 +25,7 @@ class _HomeScreenState extends State<HomePage> {
     HomePages(),
     BookingScreen(),
     BookingHistoryScreen(),
-    Center(child: Text('Settings Page', style: TextStyle(fontSize: 24))),
+    SettingsPage(),
   ];
 
   void _onItemTapped(int index) {

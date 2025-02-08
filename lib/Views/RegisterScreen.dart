@@ -4,6 +4,7 @@ import 'package:final_project/Views/CarScreen.dart';
 import 'package:final_project/Views/HomePageScreen.dart';
 import 'package:final_project/main.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Models/UserModel.dart';
 
@@ -16,19 +17,19 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _Name = TextEditingController();
+  final _Email = TextEditingController();
+  final _Password = TextEditingController();
+  final _ConfirmPassword = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
   void _register() {
     // Implement registration logic
-    if (_passwordController.text == _confirmPasswordController.text) {
-      print('Name: ${_nameController.text}');
-      print('Email: ${_emailController.text}');
-      print('Password: ${_passwordController.text}');
+    if (_Password.text == _ConfirmPassword.text) {
+      print('Name: ${_Name.text}');
+      print('Email: ${_Email.text}');
+      print('Password: ${_Password.text}');
     } else {
       // Show error that passwords don't match
     }
@@ -75,7 +76,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: Column(
                       children: [
                         TextField(
-                          controller: _nameController,
+                          controller: _Name,
                           decoration: InputDecoration(
                             prefixIcon: Icon(Icons.person_outline),
                             hintText: 'Full Name',
@@ -86,7 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         SizedBox(height: 20),
                         TextField(
-                          controller: _emailController,
+                          controller: _Email,
                           decoration: InputDecoration(
                             prefixIcon: Icon(Icons.email_outlined),
                             hintText: 'Email Address',
@@ -98,7 +99,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         SizedBox(height: 20),
                         TextField(
-                          controller: _passwordController,
+                          controller: _Password,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             prefixIcon: Icon(Icons.lock_outline),
@@ -122,7 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         SizedBox(height: 20),
                         TextField(
-                          controller: _confirmPasswordController,
+                          controller: _ConfirmPassword,
                           obscureText: _obscureConfirmPassword,
                           decoration: InputDecoration(
                             prefixIcon: Icon(Icons.lock_outline),
@@ -146,7 +147,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         SizedBox(height: 30),
                         ElevatedButton(
-                          onPressed: (){
+                          onPressed: () async {
+                            SharedPreferences prefs = await SharedPreferences.getInstance();
+                            prefs.setString('name',_Name.text );
+                            prefs.setString('email',_Email.text );
+                            prefs.setString('password',_Password.text );
+
                             Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
                             },
                           style: ElevatedButton.styleFrom(
