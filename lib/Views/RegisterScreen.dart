@@ -5,10 +5,9 @@ import 'package:final_project/Views/HomePageScreen.dart';
 import 'package:final_project/main.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:http/http.dart' as http;
 import '../Models/UserModel.dart';
-
-
+import 'package:final_project/Utills/ClientConfig.dart';
 
 
 class RegisterPage extends StatefulWidget {
@@ -24,6 +23,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+
   void _register() {
     // Implement registration logic
     if (_Password.text == _ConfirmPassword.text) {
@@ -37,6 +37,33 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    Future deleteUser(BuildContext context, String UserID) async {
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
+      var url = "fuel/deleteFuel.php?fuelID=" + UserID + getInfoDeviceSTR!;
+      final response = await http.get(Uri.parse(serverPath + url));
+      // print(serverPath + url);
+      setState(() { });
+      Navigator.pop(context);
+    }
+
+
+
+    Future insertUser(BuildContext context, String Name, String Email, String Password) async {
+      print("my link:" + serverPath);
+
+      //   SharedPreferences prefs = await SharedPreferences.getInstance();
+      //  String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
+      var url = "users/insertUser.php?Name=" + Name + "&Email=" + Email +"&Password=" + Password ;
+      final response = await http.get(Uri.parse(serverPath + url));
+      print("my link:" + serverPath + url);
+      // setState(() { });
+      // Navigator.pop(context);
+    }
+
+
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -148,12 +175,16 @@ class _RegisterPageState extends State<RegisterPage> {
                         SizedBox(height: 30),
                         ElevatedButton(
                           onPressed: () async {
+
                             SharedPreferences prefs = await SharedPreferences.getInstance();
                             prefs.setString('name',_Name.text );
                             prefs.setString('email',_Email.text );
                             prefs.setString('password',_Password.text );
 
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+                            // Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+
+
+                            insertUser(context, _Name.text, _Email.text ,_Password.text );
                             },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF4568DC),
