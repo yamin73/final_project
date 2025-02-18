@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:final_project/Views/HomePageScreen.dart';
 import 'package:flutter/material.dart';
+import 'Utills/Utills.dart';
 import 'Views/RegisterScreen.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -9,9 +13,13 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // get context => null;
+
 
   @override
   Widget build(BuildContext context) {
+    print("yamen");
+
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -43,8 +51,28 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
   }
 
+
+  checkConction() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        print('connected to internet');// print(result);// return 1;
+      }
+    } on SocketException catch (_) {
+      print('not connected to internet');// print(result);
+      var uti = new Utils();
+      uti.showMyDialog(context, "אין אינטרנט", "האפליקציה דורשת חיבור לאינטרנט, נא להתחבר בבקשה");
+      // exit(0);
+      // return;
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
+    checkConction();
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
