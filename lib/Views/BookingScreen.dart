@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:http/http.dart' as http;
+
+import '../Utills/ClientConfig.dart';
 
 class BookingScreen extends StatefulWidget {
   @override
@@ -383,6 +386,20 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
+
+  Future insertBooking(BuildContext context, String Brand, String Model,int Year,String Service,String Date,String Time,String Note )
+  async {
+
+    //   SharedPreferences prefs = await SharedPreferences.getInstance();
+    //  String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
+    var url = "bookings/insertBooking.php?Brand=" + Brand + "&Model=" + Model+ "&Year="+ "${Year}" + "&ServiceID="+Service +"&Date="+Date +"&Time="+Time+"&Note="+Note;
+    final response = await http.get(Uri.parse(serverPath + url));
+    print(serverPath + url);
+    setState(() { });
+    Navigator.pop(context);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -446,7 +463,10 @@ class _BookingScreenState extends State<BookingScreen> {
                       )
                     else
                       ElevatedButton(
-                        onPressed: () => print('Form submitted: $formData'),
+                        onPressed: () => {
+                          print('Form submitted: $formData'),
+                          insertBooking(context,formData['carBrand'],formData['carModel'],formData['year'],formData['serviceType'],formData['date'].toString(),formData['timeSlot'],formData['notes']),
+                          },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
