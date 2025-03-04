@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomePage> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'zzHome',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),

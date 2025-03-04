@@ -1,35 +1,27 @@
 class Car {
   Car({
-    this.type = "",
-    this.module= "",
-    this.carLicense="",
-    this.color="",
-    this.ownerID="",
+    this.carID = "",
+    this.carName= "",
 
   });
-  String type;
-  String module;
-  String carLicense;
-  String color;
-  String ownerID;
+  String carID;
+  String carName;
+
 
   factory Car.fromJson(Map<String, dynamic> json) => Car(
-    type: json["type"],
-    module: json["module"],
-    carLicense: json["carLicense"],
-    color: json["color"],
-    ownerID: json["ownerID"]
+    carID: json["carID"],
+    carName: json["carName"],
 
 
 
 
   );
+
+  get date => null;
   Map<String, dynamic> tojson() => {
-    type: ["type"],
-    module: ["module"],
-    carLicense:["carLicense"],
-    color:["color"],
-    ownerID:["ownerID"],
+    carID: ["carID"],
+    carName: ["carName"],
+
 
 
   };
