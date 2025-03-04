@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'BookingScreen.dart';
+import 'CarScreen.dart';
 
 class HomePages extends StatelessWidget {
   const HomePages({Key? key}) : super(key: key);
@@ -75,9 +76,12 @@ class HomePages extends StatelessWidget {
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) => BookingScreen()));
-                            },
+                              // Navigator.push(context, MaterialPageRoute(
+                              //     builder: (context) => BookingScreen()));
+                            // },
+    Navigator.push(context, MaterialPageRoute(
+    builder: (context) => Carscreen(title: "ffddf",)));
+  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.blue,
@@ -191,7 +195,9 @@ class HomePages extends StatelessWidget {
                                     color: Colors.green,
                                   ),
                                 ),
+
                               ],
+
                             ),
                           ),
                         ),
