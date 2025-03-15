@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../Utills/ClientConfig.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   @override
@@ -9,46 +13,89 @@ class BookingHistoryScreen extends StatefulWidget {
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   String filterStatus = 'All';
   Set<int> expandedItems = {};
+  List<Map<String, dynamic>> bookings = [];
+  bool isLoading = true;
+  String? errorMessage;
 
-  // Sample booking data - In a real app, this would come from a database or API
-  final List<Map<String, dynamic>> bookings = [
-    {
-      'id': 1,
-      'carBrand': 'Toyota',
-      'carModel': 'Camry',
-      'year': '2020',
-      'serviceType': 'Regular Maintenance',
-      'date': DateTime.now().subtract(Duration(days: 5)),
-      'timeSlot': '10:00 AM',
-      'status': 'Completed',
-      'notes': 'Oil change and filter replacement',
-      'cost': '\$150'
-    },
-    {
-      'id': 2,
-      'carBrand': 'Honda',
-      'carModel': 'Civic',
-      'year': '2019',
-      'serviceType': 'Full Inspection',
-      'date': DateTime.now().add(Duration(days: 2)),
-      'timeSlot': '2:00 PM',
-      'status': 'Scheduled',
-      'notes': 'Annual inspection',
-      'cost': '\$200'
-    },
-    {
-      'id': 3,
-      'carBrand': 'BMW',
-      'carModel': '3 Series',
-      'year': '2021',
-      'serviceType': 'Repair',
-      'date': DateTime.now().subtract(Duration(days: 1)),
-      'timeSlot': '11:30 AM',
-      'status': 'In Progress',
-      'notes': 'Brake system maintenance',
-      'cost': '\$350'
-    },
-  ];
+  // Map to store service types based on serviceID
+  final Map<String, String> serviceTypes = {
+    '1': 'Regular Maintenance',
+    '2': 'Full Inspection',
+    '3': 'Repair',
+    // Add more service types as needed
+  };
+
+  // Map to track booking statuses - this would be from your backend
+  // You might need to adjust this based on your actual data structure
+  final Map<int, String> bookingStatuses = {};
+
+  @override
+  void initState() {
+    super.initState();
+    fetchBookings();
+  }
+
+  Future<void> fetchBookings() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await http.get(Uri.parse(serverPath + '/bookings/getBooking.php'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = jsonDecode(response.body);
+
+        setState(() {
+          bookings = jsonData.map((data) {
+            // Parse the date from the backend format
+            DateTime? bookingDate;
+            try {
+              bookingDate = DateTime.parse(data['Date']);
+            } catch (e) {
+              bookingDate = DateTime.now(); // Fallback
+            }
+
+            // Assign a default status if not provided by backend
+            // You might want to determine this based on date or other factors
+            int bookingId = int.tryParse(data['BookingID']) ?? 0;
+            if (!bookingStatuses.containsKey(bookingId)) {
+              if (bookingDate.isBefore(DateTime.now())) {
+                bookingStatuses[bookingId] = 'Completed';
+              } else {
+                bookingStatuses[bookingId] = 'Scheduled';
+              }
+            }
+
+            return {
+              'id': bookingId,
+              'carBrand': data['Brand'],
+              'carModel': data['Model'],
+              'year': data['Year'],
+              'serviceType': serviceTypes[data['serviceID']] ?? 'Unknown Service',
+              'date': bookingDate,
+              'timeSlot': data['Time'],
+              'status': bookingStatuses[bookingId],
+              'notes': data['Note'] ?? '',
+
+            };
+          }).toList().cast<Map<String, dynamic>>();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = 'Failed to load bookings. Server error ${response.statusCode}';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load bookings: ${e.toString()}';
+        isLoading = false;
+      });
+    }
+  }
 
   Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -72,7 +119,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     return bookings.where((booking) => booking['status'] == filterStatus).toList();
   }
 
-  Widget buildStatusChip(String status) {
+  Widget buildStatusChip(String? status) {
+    status = status ?? 'Unknown';
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -132,9 +180,35 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               ),
             ],
           ),
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: fetchBookings,
+          ),
         ],
       ),
-      body: ListView.builder(
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : errorMessage != null
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              errorMessage!,
+              style: TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: fetchBookings,
+              child: Text('Try Again'),
+            ),
+          ],
+        ),
+      )
+          : filteredBookings.isEmpty
+          ? Center(child: Text('No bookings found'))
+          : ListView.builder(
         padding: EdgeInsets.all(16),
         itemCount: filteredBookings.length,
         itemBuilder: (context, index) {
@@ -220,20 +294,20 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           ),
                         ),
                         SizedBox(height: 8),
-                        Text(booking['notes']),
+                        Text(booking['notes'] ?? 'No additional notes.'),
                         SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Cost',
+                              'Booking ID',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                             Text(
-                              booking['cost'],
+                              '#${booking['id']}',
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.blue,
