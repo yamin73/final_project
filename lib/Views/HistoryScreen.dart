@@ -42,7 +42,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     });
 
     try {
-      final response = await http.get(Uri.parse(serverPath + '/bookings/getBooking.php'));
+      final response = await http.get(Uri.parse(serverPath + 'bookings/getBooking.php'));
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = jsonDecode(response.body);
@@ -70,10 +70,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
             return {
               'id': bookingId,
-              'carBrand': data['Brand'],
-              'carModel': data['Model'],
-              'year': data['Year'],
-              'serviceType': serviceTypes[data['serviceID']] ?? 'Unknown Service',
+              'carID': carID,
+              'serviceType': serviceTypes[data['serviceTypeID']] ?? 'Unknown Service',
               'date': bookingDate,
               'timeSlot': data['Time'],
               'status': bookingStatuses[bookingId],

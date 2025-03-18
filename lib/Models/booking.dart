@@ -1,8 +1,6 @@
 class Booking {
   final int id;
-  final String carBrand;
-  final String carModel;
-  final String year;
+  final String carID;
   final String serviceType;
   final DateTime date;
   final String timeSlot;
@@ -11,9 +9,7 @@ class Booking {
 
   Booking({
     required this.id,
-    required this.carBrand,
-    required this.carModel,
-    required this.year,
+    required this.carID,
     required this.serviceType,
     required this.date,
     required this.timeSlot,
@@ -48,9 +44,7 @@ class Booking {
 
     return Booking(
       id: int.tryParse(json['BookingID']) ?? 0,
-      carBrand: json['Brand'] ?? 'Unknown',
-      carModel: json['Model'] ?? 'Unknown',
-      year: json['Year'] ?? '',
+      carID: json['carID'] ?? 'Unknown',
       serviceType: serviceTypes[json['serviceID']] ?? 'Unknown Service',
       date: bookingDate,
       timeSlot: json['Time'] ?? 'N/A',
