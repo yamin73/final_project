@@ -37,22 +37,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    Future deleteUser(BuildContext context, String UserID) async {
-
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
-      var url = "fuel/deleteFuel.php?fuelID=" + UserID + getInfoDeviceSTR!;
-      final response = await http.get(Uri.parse(serverPath + url));
-      // print(serverPath + url);
-      setState(() { });
-      Navigator.pop(context);
-    }
 
 
 
     Future insertUser(BuildContext context, String Name, String Email, String Password) async {
       print("my link:" + serverPath);
-
       //   SharedPreferences prefs = await SharedPreferences.getInstance();
       //  String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
       var url = "users/insertUser.php?Name=" + Name + "&Email=" + Email +"&Password=" + Password ;

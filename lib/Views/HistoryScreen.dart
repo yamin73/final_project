@@ -68,6 +68,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               }
             }
 
+            int carID = int.tryParse(data['carID']) ?? 0;
+
             return {
               'id': bookingId,
               'carID': carID,

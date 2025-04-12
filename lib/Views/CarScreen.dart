@@ -33,7 +33,7 @@ class _CarScreen extends State<Carscreen> {
       user.id = _txtID.text;
       user.email = _txtEmail.text;
       user.password = _txtPassword.text;
-      insertUser(user);
+      // insertUser(user);
     }
   }
 
