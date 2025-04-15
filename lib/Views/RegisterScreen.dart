@@ -17,7 +17,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _Name = TextEditingController();
-  final _Email = TextEditingController();
+  final _PhoneNumber = TextEditingController();
   final _Password = TextEditingController();
   final _ConfirmPassword = TextEditingController();
   bool _obscurePassword = true;
@@ -28,7 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
     // Implement registration logic
     if (_Password.text == _ConfirmPassword.text) {
       print('Name: ${_Name.text}');
-      print('Email: ${_Email.text}');
+      print('PhoneNumber: ${_PhoneNumber.text}');
       print('Password: ${_Password.text}');
     } else {
       // Show error that passwords don't match
@@ -40,11 +40,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
 
 
-    Future insertUser(BuildContext context, String Name, String Email, String Password) async {
+    Future insertUser(BuildContext context, String Name, String phoneNumber, String Password) async {
       print("my link:" + serverPath);
       //   SharedPreferences prefs = await SharedPreferences.getInstance();
       //  String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
-      var url = "users/insertUser.php?Name=" + Name + "&Email=" + Email +"&Password=" + Password ;
+      var url = "users/insertUser.php?Name=" + Name + "&phoneNumber=" + phoneNumber +"&Password=" + Password ;
       final response = await http.get(Uri.parse(serverPath + url));
       print("my link:" + serverPath + url);
       // setState(() { });
@@ -103,15 +103,15 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         SizedBox(height: 20),
                         TextField(
-                          controller: _Email,
+                          controller: _PhoneNumber,
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.email_outlined),
-                            hintText: 'Email Address',
+                            prefixIcon: Icon(Icons.phone_outlined),
+                            hintText: 'Phone Number',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          keyboardType: TextInputType.emailAddress,
+                          keyboardType: TextInputType.phone,
                         ),
                         SizedBox(height: 20),
                         TextField(
@@ -167,13 +167,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                             SharedPreferences prefs = await SharedPreferences.getInstance();
                             prefs.setString('name',_Name.text );
-                            prefs.setString('email',_Email.text );
+                            prefs.setString('phoneNumber',_PhoneNumber.text );
                             prefs.setString('password',_Password.text );
-
-                            // Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-
-
-                            insertUser(context, _Name.text, _Email.text ,_Password.text );
+                             Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+                             insertUser(context, _Name.text, _PhoneNumber.text ,_Password.text );
                             },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF4568DC),

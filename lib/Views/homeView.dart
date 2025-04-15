@@ -79,8 +79,8 @@ class HomePages extends StatelessWidget {
                               // Navigator.push(context, MaterialPageRoute(
                               //     builder: (context) => BookingScreen()));
                             // },
-    Navigator.push(context, MaterialPageRoute(
-    builder: (context) => Carscreen(title: "ffddf",)));
+    /*Navigator.push(context, MaterialPageRoute(
+    builder: (context) => Carscreen(title: "ffddf",)));*/
   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,

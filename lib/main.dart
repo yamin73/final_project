@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:final_project/Views/HomePageScreen.dart';
 import 'package:flutter/material.dart';
+import 'Utills/ClientConfig.dart';
 import 'Utills/Utills.dart';
 import 'Views/RegisterScreen.dart';
+import 'package:http/http.dart' as http;
 
 
 void main() {
@@ -40,16 +43,56 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
+  final _phoneNumberController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  void _login() {
-    // Implement login logic
-    print('Email: ${_emailController.text}');
-    print('Password: ${_passwordController.text}');
-    Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+  Future _login() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    //  String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
+    var url = "login/checkLogin.php?phoneNumber=" + _phoneNumberController.text+ "&password=" + _passwordController.text;
+    final response = await http.get(Uri.parse(serverPath + url));
+    print(serverPath + url);
+    // setState(() { });
+    // Navigator.pop(context);
+
+    if(checkLoginModel.fromJson(jsonDecode(response.body)).userID == 0)
+    {
+      // return 'שם משתמש ו/או הסיסמה שגויים';
+      var uti = new Utils();
+      uti.showMyDialog(context, "Error", " user name or password is wrong");
+    }
+    else {
+      // print("SharedPreferences 1");
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', checkLoginModel
+          .fromJson(jsonDecode(response.body))
+          .userID!.toString());
+
+      await prefs.setString('phoneNumber', _phoneNumberController.text);
+      await prefs.setString('password', _passwordController.text);
+
+      print('phoneNumber: ${_phoneNumberController.text}');
+      print('Password: ${_passwordController.text}');
+      Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+    }
   }
+
+
+
+
+
+  fillSavedPars()
+  async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _phoneNumberController.text = prefs.get("phoneNumber").toString();
+    _passwordController.text = prefs.get("password").toString();
+    if(_phoneNumberController.text != "" && _passwordController.text != "")
+    {
+      _login();
+    }
+  }
+
 
 
   checkConction() async {
@@ -72,6 +115,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     checkConction();
+    fillSavedPars();
 
     return Scaffold(
       body: Container(
@@ -112,15 +156,15 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       children: [
                         TextField(
-                          controller: _emailController,
+                          controller: _phoneNumberController,
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.email_outlined),
-                            hintText: 'Email Address',
+                            prefixIcon: Icon(Icons.phone_outlined),
+                            hintText: 'Phone Number',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          keyboardType: TextInputType.emailAddress,
+                          keyboardType: TextInputType.phone,
                         ),
                         SizedBox(height: 20),
                         TextField(
@@ -261,3 +305,26 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+
+class checkLoginModel {
+  int? userID;
+  // String? userTypeID;
+  String? Name;
+
+  checkLoginModel({
+    this.userID,
+    // this.userTypeID,
+    this.Name,
+  });
+
+  factory checkLoginModel.fromJson(Map<String, dynamic> json) {
+    return checkLoginModel(
+      userID: json['userID'],
+      // userTypeID: json['userTypeID'],
+      Name: json['Name'],
+    );
+  }
+}
+
+
