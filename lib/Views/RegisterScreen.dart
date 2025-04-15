@@ -169,11 +169,8 @@ class _RegisterPageState extends State<RegisterPage> {
                             prefs.setString('name',_Name.text );
                             prefs.setString('email',_Email.text );
                             prefs.setString('password',_Password.text );
-
-                            // Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-
-
-                            insertUser(context, _Name.text, _Email.text ,_Password.text );
+                             Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+                             insertUser(context, _Name.text, _Email.text ,_Password.text );
                             },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF4568DC),

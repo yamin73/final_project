@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:final_project/Views/HomePageScreen.dart';
 import 'package:flutter/material.dart';
+import 'Utills/ClientConfig.dart';
 import 'Utills/Utills.dart';
 import 'Views/RegisterScreen.dart';
+import 'package:http/http.dart' as http;
 
 
 void main() {
@@ -44,12 +47,52 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  void _login() {
-    // Implement login logic
-    print('Email: ${_emailController.text}');
-    print('Password: ${_passwordController.text}');
-    Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+  Future _login() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    //  String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
+    var url = "login/checkLogin.php?email=" + _emailController.text+ "&password=" + _passwordController.text;
+    final response = await http.get(Uri.parse(serverPath + url));
+    print(serverPath + url);
+    // setState(() { });
+    // Navigator.pop(context);
+
+    if(checkLoginModel.fromJson(jsonDecode(response.body)).userID == 0)
+    {
+      // return 'שם משתמש ו/או הסיסמה שגויים';
+      var uti = new Utils();
+      uti.showMyDialog(context, "Error", " user name or password is wrong");
+    }
+    else {
+      // print("SharedPreferences 1");
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', checkLoginModel
+          .fromJson(jsonDecode(response.body))
+          .userID!.toString());
+
+      await prefs.setString('Email', _emailController.text);
+      await prefs.setString('password', _passwordController.text);
+
+      print('Email: ${_emailController.text}');
+      print('Password: ${_passwordController.text}');
+      Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+    }
   }
+
+
+
+
+
+  fillSavedPars()
+  async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _emailController.text = prefs.get("Email").toString();
+    _passwordController.text = prefs.get("password").toString();
+    if(_emailController.text != "" && _passwordController.text != "")
+    {
+      _login();
+    }
+  }
+
 
 
   checkConction() async {
@@ -72,6 +115,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     checkConction();
+    fillSavedPars();
 
     return Scaffold(
       body: Container(
@@ -261,3 +305,26 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+
+class checkLoginModel {
+  int? userID;
+  // String? userTypeID;
+  String? Name;
+
+  checkLoginModel({
+    this.userID,
+    // this.userTypeID,
+    this.Name,
+  });
+
+  factory checkLoginModel.fromJson(Map<String, dynamic> json) {
+    return checkLoginModel(
+      userID: json['userID'],
+      // userTypeID: json['userTypeID'],
+      Name: json['Name'],
+    );
+  }
+}
+
+
