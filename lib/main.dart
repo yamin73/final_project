@@ -3,10 +3,13 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:final_project/Views/HomePageScreen.dart';
 import 'package:flutter/material.dart';
+import 'ManagerViews/AdminDashboard.dart';
 import 'Utills/ClientConfig.dart';
 import 'Utills/Utills.dart';
 import 'Views/RegisterScreen.dart';
 import 'package:http/http.dart' as http;
+
+import 'Views/SplashScreen.dart';
 
 
 void main() {
@@ -16,22 +19,16 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // get context => null;
-
-
   @override
   Widget build(BuildContext context) {
-    print("yamen");
-
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'AutoCare',
       theme: ThemeData(
-
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home:  LoginPage(),
+      home: SplashScreen(),
     );
   }
 }
@@ -47,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  Future _login() async {
+ /* Future _login() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     //  String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
     var url = "login/checkLogin.php?phoneNumber=" + _phoneNumberController.text+ "&password=" + _passwordController.text;
@@ -75,6 +72,59 @@ class _LoginPageState extends State<LoginPage> {
       print('phoneNumber: ${_phoneNumberController.text}');
       print('Password: ${_passwordController.text}');
       Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+    }
+  }*/
+
+
+  Future _login() async {
+    setState(() {});
+
+    try {
+      var url = "login/checkLogin.php?phoneNumber=" + _phoneNumberController.text + "&password=" + _passwordController.text;
+      final response = await http.get(Uri.parse(serverPath + url));
+      print(serverPath + url);
+
+      if (response.statusCode == 200) {
+        final loginData = checkLoginModel.fromJson(jsonDecode(response.body));
+
+        if (loginData.userID == 0) {
+          // Invalid credentials
+          var uti = new Utils();
+          uti.showMyDialog(context, "Error", "Username or password is wrong");
+        } else {
+          // Login successful
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', loginData.userID.toString());
+          await prefs.setString('phoneNumber', _phoneNumberController.text);
+          await prefs.setString('password', _passwordController.text);
+          await prefs.setString('name', loginData.Name ?? "User");
+
+          // Check if user is admin (ID 1 or 2)
+          if (loginData.userID == 1 || loginData.userID == 2) {
+            // Admin user - navigate to admin dashboard
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => AdminDashboard())
+            );
+          } else {
+            // Regular user - navigate to regular home page
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => HomePage())
+            );
+          }
+        }
+      } else {
+        // Server error
+        var uti = new Utils();
+        uti.showMyDialog(context, "Error", "Server error. Please try again later.");
+      }
+    } catch (e) {
+      // Network or other error
+      var uti = new Utils();
+      uti.showMyDialog(context, "Error", "Connection error: $e");
+    } finally {
+      setState(() {});
     }
   }
 
@@ -305,9 +355,27 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
-
 class checkLoginModel {
+  int? userID;
+  String? Name;
+  String? userType; // You might add this field to identify admin vs regular users
+
+  checkLoginModel({
+    this.userID,
+    this.Name,
+    this.userType,
+  });
+
+  factory checkLoginModel.fromJson(Map<String, dynamic> json) {
+    return checkLoginModel(
+      userID: json['userID'] != null ? int.parse(json['userID'].toString()) : 0,
+      Name: json['Name'],
+      userType: json['userType'],
+    );
+  }
+}
+
+/*class checkLoginModel {
   int? userID;
   // String? userTypeID;
   String? Name;
@@ -325,6 +393,6 @@ class checkLoginModel {
       Name: json['Name'],
     );
   }
-}
+}*/
 
 

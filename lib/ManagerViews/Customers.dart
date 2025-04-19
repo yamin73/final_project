@@ -1,495 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:intl/intl.dart';
-import '../models/customer.dart';
-import '../models/car_visit.dart';
-import '../services/database_service.dart';
-import '../widgets/search_bar.dart';
+import '../Utills/ClientConfig.dart';
 
-class CustomersPage extends StatefulWidget {
-  const CustomersPage({Key? key}) : super(key: key);
+class CustomersScreen extends StatefulWidget {
+  const CustomersScreen({Key? key}) : super(key: key);
 
   @override
-  _CustomersPageState createState() => _CustomersPageState();
+  _CustomersScreenState createState() => _CustomersScreenState();
 }
 
-class _CustomersPageState extends State<CustomersPage> {
-  final DatabaseService _databaseService = DatabaseService();
-  List<Customer> _allCustomers = [];
-  List<Customer> _filteredCustomers = [];
-  bool _isLoading = true;
-  String _searchQuery = '';
-  String _sortBy = 'name'; // 'name', 'lastVisit', 'visitsCount'
-  bool _sortAscending = true;
+class _CustomersScreenState extends State<CustomersScreen> {
+  bool isLoading = true;
+  List<Map<String, dynamic>> customersList = [];
+  TextEditingController searchController = TextEditingController();
+  List<Map<String, dynamic>> filteredCustomers = [];
+  bool isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCustomers();
-  }
-
-  Future<void> _loadCustomers() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final customers = await _databaseService.getAllCustomers();
-      setState(() {
-        _allCustomers = customers;
-        _applyFiltersAndSort();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showErrorSnackBar('حدث خطأ أثناء تحميل بيانات الزبائن');
-    }
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  void _applyFiltersAndSort() {
-    setState(() {
-      // تطبيق فلتر البحث
-      _filteredCustomers = _allCustomers.where((customer) {
-        final String searchString = '${customer.name} ${customer.phone} ${customer.cars.map((car) => '${car.make} ${car.model} ${car.plateNumber}').join(' ')}'
-            .toLowerCase();
-        return _searchQuery.isEmpty || searchString.contains(_searchQuery.toLowerCase());
-      }).toList();
-
-      // تطبيق الترتيب
-      _filteredCustomers.sort((a, b) {
-        int comparison;
-        switch (_sortBy) {
-          case 'name':
-            comparison = a.name.compareTo(b.name);
-            break;
-          case 'lastVisit':
-            final DateTime aLastVisit = a.lastVisit ?? DateTime(1900);
-            final DateTime bLastVisit = b.lastVisit ?? DateTime(1900);
-            comparison = aLastVisit.compareTo(bLastVisit);
-            break;
-          case 'visitsCount':
-            comparison = a.visitsCount.compareTo(b.visitsCount);
-            break;
-          default:
-            comparison = a.name.compareTo(b.name);
-        }
-        return _sortAscending ? comparison : -comparison;
-      });
-    });
-  }
-
-  void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query;
-    });
-    _applyFiltersAndSort();
-  }
-
-  void _changeSortOrder(String sortBy) {
-    setState(() {
-      if (_sortBy == sortBy) {
-        _sortAscending = !_sortAscending;
-      } else {
-        _sortBy = sortBy;
-        _sortAscending = true;
-      }
-    });
-    _applyFiltersAndSort();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('قائمة الزبائن', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadCustomers,
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_add),
-            onPressed: () {
-              // التنقل إلى صفحة إضافة عميل جديد
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: CustomSearchBar(
-              hintText: 'البحث عن زبون، رقم هاتف، سيارة...',
-              onChanged: _onSearchChanged,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'ترتيب حسب:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: [
-                    _buildSortButton('الاسم', 'name'),
-                    const SizedBox(width: 8),
-                    _buildSortButton('آخر زيارة', 'lastVisit'),
-                    const SizedBox(width: 8),
-                    _buildSortButton('عدد الزيارات', 'visitsCount'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Divider(),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredCustomers.isEmpty
-                ? _buildEmptyState()
-                : _buildCustomersList(),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'إجمالي عدد الزبائن: ${_filteredCustomers.length}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // التنقل إلى صفحة إضافة عميل جديد
-        },
-        child: const Icon(Icons.person_add),
-      ),
-    );
-  }
-
-  Widget _buildSortButton(String label, String sortKey) {
-    final bool isActive = _sortBy == sortKey;
-
-    return TextButton.icon(
-      onPressed: () => _changeSortOrder(sortKey),
-      icon: Icon(
-        isActive
-            ? _sortAscending ? Icons.arrow_upward : Icons.arrow_downward
-            : Icons.swap_vert,
-        size: 16,
-        color: isActive ? Theme.of(context).primaryColor : Colors.grey,
-      ),
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isActive ? Theme.of(context).primaryColor : Colors.grey,
-          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.people_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _searchQuery.isNotEmpty
-                ? 'لا توجد نتائج تطابق معايير البحث'
-                : 'لا يوجد زبائن مسجلين',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-          if (_searchQuery.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            TextButton.icon(
-              icon: const Icon(Icons.refresh),
-              label: const Text('إعادة ضبط البحث'),
-              onPressed: () {
-                setState(() {
-                  _searchQuery = '';
-                });
-                _applyFiltersAndSort();
-              },
-            ),
-          ] else ...[
-            const SizedBox(height: 8),
-            TextButton.icon(
-              icon: const Icon(Icons.person_add),
-              label: const Text('إضافة زبون جديد'),
-              onPressed: () {
-                // التنقل إلى صفحة إضافة عميل جديد
-              },
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCustomersList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _filteredCustomers.length,
-      itemBuilder: (context, index) {
-        final customer = _filteredCustomers[index];
-        return CustomerCard(
-          customer: customer,
-          onTap: () => _navigateToCustomerDetails(customer),
-        );
-      },
-    );
-  }
-
-  void _navigateToCustomerDetails(Customer customer) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CustomerDetailsPage(customerId: customer.id),
-      ),
-    ).then((_) => _loadCustomers()); // تحديث البيانات عند العودة
-  }
-}
-
-class CustomerCard extends StatelessWidget {
-  final Customer customer;
-  final VoidCallback onTap;
-
-  const CustomerCard({
-    Key? key,
-    required this.customer,
-    required this.onTap,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                          radius: 24,
-                          child: Text(
-                            customer.name.isNotEmpty ? customer.name[0].toUpperCase() : '?',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                customer.name,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                customer.phone,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${customer.visitsCount} زيارة',
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (customer.lastVisit != null)
-                        Text(
-                          'آخر زيارة: ${DateFormat('dd/MM/yyyy', 'ar').format(customer.lastVisit!)}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(),
-              const SizedBox(height: 8),
-              Text(
-                'السيارات:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 40,
-                child: customer.cars.isEmpty
-                    ? Center(
-                  child: Text(
-                    'لا توجد سيارات مسجلة',
-                    style: TextStyle(color: Colors.grey[500], fontStyle: FontStyle.italic),
-                  ),
-                )
-                    : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: customer.cars.length,
-                  itemBuilder: (context, index) {
-                    final car = customer.cars[index];
-                    return Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.directions_car,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${car.make} ${car.model}',
-                            style: TextStyle(
-                              color: Colors.grey[800],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomerDetailsPage extends StatefulWidget {
-  final String customerId;
-
-  const CustomerDetailsPage({Key? key, required this.customerId}) : super(key: key);
-
-  @override
-  _CustomerDetailsPageState createState() => _CustomerDetailsPageState();
-}
-
-class _CustomerDetailsPageState extends State<CustomerDetailsPage> with SingleTickerProviderStateMixin {
-  final DatabaseService _databaseService = DatabaseService();
-  late TabController _tabController;
-  bool _isLoading = true;
-  Customer? _customer;
-  List<CarVisit> _visitHistory = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _loadCustomerData();
+    fetchCustomers();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadCustomerData() async {
+  Future<void> fetchCustomers() async {
     setState(() {
-      _isLoading = true;
+      isLoading = true;
     });
 
     try {
-      final customer = await _databaseService.getCustomerById(widget.customerId);
-      final visits = await _databaseService.getCustomerVisitHistory(widget.customerId);
+      final response = await http.get(
+        Uri.parse('${serverPath}customers/getAllCustomers.php'),
+      );
 
-      setState(() {
-        _customer = customer;
-        _visitHistory = visits;
-        _isLoading = false;
-      });
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          customersList = List<Map<String, dynamic>>.from(data);
+          filteredCustomers = customersList;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        _showErrorSnackBar('Failed to load customers: Server error');
+      }
     } catch (e) {
       setState(() {
-        _isLoading = false;
+        isLoading = false;
       });
-      _showErrorSnackBar('حدث خطأ أثناء تحميل بيانات الزبون');
+      _showErrorSnackBar('Network error: $e');
     }
   }
 
@@ -498,452 +66,560 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> with SingleTi
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
+        duration: Duration(seconds: 3),
       ),
     );
+  }
+
+  void _filterCustomers(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        filteredCustomers = customersList;
+        isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      isSearching = true;
+      filteredCustomers = customersList.where((customer) {
+        final name = customer['UserName']?.toString().toLowerCase() ?? '';
+        final phone = customer['PhoneNumber']?.toString().toLowerCase() ?? '';
+        final id = customer['ID']?.toString().toLowerCase() ?? '';
+        final email = customer['Email']?.toString().toLowerCase() ?? '';
+
+        return name.contains(query.toLowerCase()) ||
+            phone.contains(query.toLowerCase()) ||
+            id.contains(query.toLowerCase()) ||
+            email.contains(query.toLowerCase());
+      }).toList();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _isLoading ? 'تفاصيل الزبون' : _customer!.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
+        title: Text('Customers'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: Icon(Icons.refresh),
+            onPressed: fetchCustomers,
+          ),
+        ],
+      ),
+      body: Column(
+          children: [
+      // Search Bar
+      Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: TextField(
+        controller: searchController,
+        decoration: InputDecoration(
+          hintText: 'Search by name, phone or ID...',
+          prefixIcon: Icon(Icons.search),
+          suffixIcon: searchController.text.isNotEmpty
+              ? IconButton(
+            icon: Icon(Icons.clear),
             onPressed: () {
-              // التنقل إلى صفحة تعديل بيانات الزبون
+              searchController.clear();
+              _filterCustomers('');
             },
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'المعلومات الشخصية'),
-            Tab(text: 'سجل الزيارات'),
-          ],
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-        controller: _tabController,
-        children: [
-          _buildCustomerInfoTab(),
-          _buildVisitHistoryTab(),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // إنشاء موعد جديد للزبون
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('إضافة زيارة جديدة'),
-      ),
-    );
-  }
-
-  Widget _buildCustomerInfoTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionTitle('معلومات الزبون'),
-          _buildInfoCard(
-            child: Column(
-              children: [
-                _buildInfoRow(
-                  icon: Icons.person,
-                  title: 'الاسم',
-                  value: _customer!.name,
-                ),
-                const Divider(),
-                _buildInfoRow(
-                  icon: Icons.phone,
-                  title: 'رقم الهاتف',
-                  value: _customer!.phone,
-                ),
-                const Divider(),
-                _buildInfoRow(
-                  icon: Icons.email,
-                  title: 'البريد الإلكتروني',
-                  value: _customer!.email.isEmpty ? 'غير متوفر' : _customer!.email,
-                ),
-                const Divider(),
-                _buildInfoRow(
-                  icon: Icons.location_on,
-                  title: 'العنوان',
-                  value: _customer!.address.isEmpty ? 'غير متوفر' : _customer!.address,
-                ),
-                const Divider(),
-                _buildInfoRow(
-                  icon: Icons.calendar_today,
-                  title: 'تاريخ التسجيل',
-                  value: DateFormat('dd/MM/yyyy', 'ar').format(_customer!.registrationDate),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSectionTitle('سيارات الزبون'),
-              TextButton.icon(
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('إضافة سيارة'),
-                onPressed: () {
-                  // إضافة سيارة جديدة للزبون
-                },
-              ),
-            ],
-          ),
-          _customer!.cars.isEmpty
-              ? _buildEmptyState(
-            icon: Icons.directions_car_outlined,
-            message: 'لا توجد سيارات مسجلة لهذا الزبون',
           )
-              : Column(
-            children: _customer!.cars.map((car) => _buildCarCard(car)).toList(),
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.green.shade200),
           ),
-          const SizedBox(height: 24),
-          _buildSectionTitle('ملاحظات'),
-          _buildInfoCard(
-            child: _customer!.notes.isEmpty
-                ? Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: Text(
-                  'لا توجد ملاحظات',
-                  style: TextStyle(color: Colors.grey[500], fontStyle: FontStyle.italic),
-                ),
-              ),
-            )
-                : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(_customer!.notes),
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
+          filled: true,
+          fillColor: Colors.green.shade50,
+        ),
+        onChanged: _filterCustomers,
       ),
-    );
-  }
+    ),
 
-  Widget _buildVisitHistoryTab() {
-    return _visitHistory.isEmpty
-        ? _buildEmptyState(
-      icon: Icons.history,
-      message: 'لا توجد زيارات سابقة لهذا الزبون',
+    // Customer count
+    Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Row(
+    children: [
+    Text(
+    'Total: ${filteredCustomers.length} customers',
+    style: TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.grey.shade700,
+    ),
+    ),
+    Spacer(),
+    DropdownButton<String>(
+    value: 'Name',
+    items: ['Name', 'Recent', 'Visits']
+        .map((item) => DropdownMenuItem(
+    value: item,
+    child: Text('Sort by: $item'),
+    ))
+        .toList(),
+    onChanged: (value) {
+    // Implement sorting
+    },
+    ),
+    ],
+    ),
+    ),
+
+    SizedBox(height: 10),
+
+    // Customers List
+    Expanded(
+    child: isLoading
+    ? Center(child: CircularProgressIndicator())
+        : filteredCustomers.isEmpty
+    ? Center(
+    child: Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+    Icon(Icons.people_outline, size: 64, color: Colors.grey),
+    SizedBox(height: 16),
+    Text(
+    isSearching
+    ? 'No customers match your search'
+        : 'No customers found',
+    style: TextStyle(
+    fontSize: 18,
+    color: Colors.grey,
+    ),
+    ),
+    ],
+    ),
     )
         : ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _visitHistory.length,
-      itemBuilder: (context, index) {
-        final visit = _visitHistory[index];
-        return _buildVisitCard(visit);
-      },
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard({required Widget child}) {
+    itemCount: filteredCustomers.length,
+    itemBuilder: (context, index) {
+    final customer = filteredCustomers[index];
+    final name = customer['UserName'] ?? 'Unknown';
+    final phone = customer['PhoneNumber'] ?? 'N/A';
+    final lastVisit = customer['lastVisit'] != null
+    ? DateFormat('MMM d, yyyy').format(DateTime.parse(customer['lastVisit']))
+        : 'Never';
     return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey[600], size: 20),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCarCard(Car car) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${car.make} ${car.model}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
-                      onPressed: () {
-                        // تعديل بيانات السيارة
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.history, size: 20, color: Colors.green),
-                      onPressed: () {
-                        // عرض سجل صيانة السيارة
-                      },
-                    ),
-                  ],
-                ),
-              ],
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.green.shade100,
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : '?',
+            style: TextStyle(
+              color: Colors.green.shade800,
+              fontWeight: FontWeight.bold,
             ),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildCarPropertyItem(
-                  title: 'رقم اللوحة',
-                  value: car.plateNumber,
-                ),
-                _buildCarPropertyItem(
-                  title: 'سنة الصنع',
-                  value: car.year.toString(),
-                ),
-                _buildCarPropertyItem(
-                  title: 'اللون',
-                  value: car.color,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildCarPropertyItem(
-                  title: 'آخر كيلومتراج',
-                  value: '${car.lastMileage} كم',
-                ),
-                _buildCarPropertyItem(
-                  title: 'وقت التسجيل',
-                  value: DateFormat('MM/yyyy', 'ar').format(car.registrationDate),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCarPropertyItem({required String title, required String value}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 12,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
+        title: Text(
+          name,
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
-      ],
-    );
-  }
-
-  Widget _buildVisitCard(CarVisit visit) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+        subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  DateFormat('EEEE, dd MMMM yyyy', 'ar').format(visit.visitDate),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  DateFormat('hh:mm a', 'ar').format(visit.visitDate),
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(),
-            Row(
-              children: [
-                const Icon(Icons.directions_car, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(
-                  '${visit.carMake} ${visit.carModel} - ${visit.carPlate}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.build, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    visit.serviceDescription,
-                    style: const TextStyle(fontSize: 16),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(visit.serviceStatus),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    visit.serviceStatus,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                if (visit.cost > 0)
-                  Text(
-                    '${visit.cost} ريال',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.info_outline, size: 16),
-                  label: const Text('تفاصيل'),
-                  onPressed: () {
-                    // عرض تفاصيل الزيارة
-                  },
-                ),
-              ],
-            ),
+            SizedBox(height: 4),
+            Text('Phone: $phone'),
+            Text('Last Visit: $lastVisit'),
           ],
+        ),
+        trailing: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.green.shade200),
+          ),
+          child: Text(
+            customer['visitsCount'] != null ? '${customer['visitsCount']} visits' : 'New',
+            style: TextStyle(
+              color: Colors.green.shade800,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        onTap: () {
+          // Navigate to customer details
+          _showCustomerDetails(customer);
+        },
+      ),
+    );
+    },
+    ),
+    ),
+          ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Add new customer
+        },
+        backgroundColor: Colors.green,
+        child: Icon(Icons.person_add),
+        tooltip: 'Add Customer',
+      ),
+    );
+  }
+
+  Future<void> _showCustomerDetails(Map<String, dynamic> customer) async {
+    // Fetch customer's cars
+    List<Map<String, dynamic>> customerCars = [];
+    bool isLoadingCars = true;
+
+    try {
+      final response = await http.get(
+        Uri.parse('${serverPath}cars/getCustomerCars.php?customerID=${customer['clientID']}'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        customerCars = List<Map<String, dynamic>>.from(data);
+        isLoadingCars = false;
+      } else {
+        isLoadingCars = false;
+      }
+    } catch (e) {
+      isLoadingCars = false;
+    }
+
+    // Fetch customer's service history
+    List<Map<String, dynamic>> serviceHistory = [];
+    bool isLoadingHistory = true;
+
+    try {
+      final response = await http.get(
+        Uri.parse('${serverPath}bookings/getCustomerBookings.php?customerID=${customer['clientID']}'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        serviceHistory = List<Map<String, dynamic>>.from(data);
+        isLoadingHistory = false;
+      } else {
+        isLoadingHistory = false;
+      }
+    } catch (e) {
+      isLoadingHistory = false;
+    }
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: EdgeInsets.all(20),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              Center(
+                child: Container(
+                  width: 60,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: EdgeInsets.only(bottom: 20),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Customer Details',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton.icon(
+                    icon: Icon(Icons.edit),
+                    label: Text('Edit'),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      // Navigate to edit customer page
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+
+              // Customer Info Card
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.green.shade100,
+                            child: Text(
+                              customer['UserName'] != null && customer['UserName'].toString().isNotEmpty
+                                  ? customer['UserName'][0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green.shade800,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  customer['UserName'] ?? 'Unknown',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.phone, size: 16, color: Colors.grey),
+                                    SizedBox(width: 4),
+                                    Text(customer['PhoneNumber'] ?? 'N/A'),
+                                  ],
+                                ),
+                                if (customer['Email'] != null)
+                                  Row(
+                                    children: [
+                                      Icon(Icons.email, size: 16, color: Colors.grey),
+                                      SizedBox(width: 4),
+                                      Text(customer['Email']),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
+                      Divider(height: 30),
+                      _detailRow('Customer ID', customer['clientID'] ?? 'N/A'),
+                      _detailRow('ID Number', customer['ID'] ?? 'N/A'),
+                      _detailRow('Joined', customer['createdDateTime'] != null
+                          ? DateFormat('MMM d, yyyy').format(DateTime.parse(customer['createdDateTime']))
+                          : 'N/A'),
+                      _detailRow('Total Visits', customer['visitsCount'] != null ? '${customer['visitsCount']}' : '0'),
+                      _detailRow('Last Visit', customer['lastVisit'] != null
+                          ? DateFormat('MMM d, yyyy').format(DateTime.parse(customer['lastVisit']))
+                          : 'Never'),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 20),
+
+              // Customer's Cars Section
+              Text(
+                'Customer\'s Cars',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10),
+
+              isLoadingCars
+                  ? Center(child: CircularProgressIndicator())
+                  : customerCars.isEmpty
+                  ? Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('No cars registered for this customer'),
+              )
+                  : ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: customerCars.length,
+                itemBuilder: (context, index) {
+                  final car = customerCars[index];
+                  return Card(
+                    margin: EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      leading: Icon(Icons.directions_car, color: Colors.blue),
+                      title: Text('${car['carBrand'] ?? ''} ${car['carModel'] ?? ''}'),
+                      subtitle: Text('License: ${car['carLicense'] ?? 'N/A'}'),
+                      trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        // Show car details
+                      },
+                    ),
+                  );
+                },
+              ),
+
+              SizedBox(height: 20),
+
+              // Service History Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Service History',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // View full history in separate screen
+                    },
+                    child: Text('View All'),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+
+              isLoadingHistory
+                  ? Center(child: CircularProgressIndicator())
+                  : serviceHistory.isEmpty
+                  ? Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('No service history for this customer'),
+              )
+                  : ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: serviceHistory.length > 3 ? 3 : serviceHistory.length,
+                itemBuilder: (context, index) {
+                  final service = serviceHistory[index];
+                  return Card(
+                    margin: EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      leading: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.build, color: Colors.amber.shade800),
+                      ),
+                      title: Text(service['serviceType'] ?? 'Service'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Car: ${service['carBrand'] ?? ''} ${service['carModel'] ?? ''}'),
+                          Text('Date: ${service['Date'] != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(service['Date'])) : 'N/A'}'),
+                        ],
+                      ),
+                      trailing: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: service['status'] == 'Completed' ? Colors.green.shade100 : Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          service['status'] ?? 'Pending',
+                          style: TextStyle(
+                            color: service['status'] == 'Completed' ? Colors.green.shade800 : Colors.blue.shade800,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      onTap: () {
+                        // Show service details
+                      },
+                    ),
+                  );
+                },
+              ),
+
+              SizedBox(height: 30),
+
+              // Action Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.add_circle_outline),
+                    label: Text('New Car'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      minimumSize: Size(140, 50),
+                    ),
+                    onPressed: () {
+                      // Add new car for this customer
+                      Navigator.pop(context);
+                    },
+                  ),
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.calendar_today),
+                    label: Text('New Booking'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      minimumSize: Size(140, 50),
+                    ),
+                    onPressed: () {
+                      // Create new booking for this customer
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'مكتمل':
-        return Colors.green;
-      case 'قيد التنفيذ':
-        return Colors.blue;
-      case 'معلق':
-        return Colors.orange;
-      case 'ملغي':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Widget _buildEmptyState({required IconData icon, required String message}) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
         children: [
-          Icon(
-            icon,
-            size: 80,
-            color: Colors.grey[400],
+          Expanded(
+            flex: 3,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey,
+              ),
+            ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
-            textAlign: TextAlign.center,
+          Expanded(
+            flex: 5,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+              ),
+            ),
           ),
         ],
       ),
