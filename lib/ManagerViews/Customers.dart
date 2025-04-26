@@ -109,149 +109,149 @@ class _CustomersScreenState extends State<CustomersScreen> {
         ],
       ),
       body: Column(
-          children: [
-      // Search Bar
-      Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        controller: searchController,
-        decoration: InputDecoration(
-          hintText: 'Search by name, phone or ID...',
-          prefixIcon: Icon(Icons.search),
-          suffixIcon: searchController.text.isNotEmpty
-              ? IconButton(
-            icon: Icon(Icons.clear),
-            onPressed: () {
-              searchController.clear();
-              _filterCustomers('');
-            },
-          )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.green.shade200),
-          ),
-          filled: true,
-          fillColor: Colors.green.shade50,
-        ),
-        onChanged: _filterCustomers,
-      ),
-    ),
-
-    // Customer count
-    Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: Row(
-    children: [
-    Text(
-    'Total: ${filteredCustomers.length} customers',
-    style: TextStyle(
-    fontWeight: FontWeight.bold,
-    color: Colors.grey.shade700,
-    ),
-    ),
-    Spacer(),
-    DropdownButton<String>(
-    value: 'Name',
-    items: ['Name', 'Recent', 'Visits']
-        .map((item) => DropdownMenuItem(
-    value: item,
-    child: Text('Sort by: $item'),
-    ))
-        .toList(),
-    onChanged: (value) {
-    // Implement sorting
-    },
-    ),
-    ],
-    ),
-    ),
-
-    SizedBox(height: 10),
-
-    // Customers List
-    Expanded(
-    child: isLoading
-    ? Center(child: CircularProgressIndicator())
-        : filteredCustomers.isEmpty
-    ? Center(
-    child: Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-    Icon(Icons.people_outline, size: 64, color: Colors.grey),
-    SizedBox(height: 16),
-    Text(
-    isSearching
-    ? 'No customers match your search'
-        : 'No customers found',
-    style: TextStyle(
-    fontSize: 18,
-    color: Colors.grey,
-    ),
-    ),
-    ],
-    ),
-    )
-        : ListView.builder(
-    itemCount: filteredCustomers.length,
-    itemBuilder: (context, index) {
-    final customer = filteredCustomers[index];
-    final name = customer['UserName'] ?? 'Unknown';
-    final phone = customer['PhoneNumber'] ?? 'N/A';
-    final lastVisit = customer['lastVisit'] != null
-    ? DateFormat('MMM d, yyyy').format(DateTime.parse(customer['lastVisit']))
-        : 'Never';
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.green.shade100,
-          child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : '?',
-            style: TextStyle(
-              color: Colors.green.shade800,
-              fontWeight: FontWeight.bold,
+        children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name, phone or ID...',
+                prefixIcon: Icon(Icons.search),
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    searchController.clear();
+                    _filterCustomers('');
+                  },
+                )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.green.shade200),
+                ),
+                filled: true,
+                fillColor: Colors.green.shade50,
+              ),
+              onChanged: _filterCustomers,
             ),
           ),
-        ),
-        title: Text(
-          name,
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 4),
-            Text('Phone: $phone'),
-            Text('Last Visit: $lastVisit'),
-          ],
-        ),
-        trailing: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.green.shade50,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.green.shade200),
-          ),
-          child: Text(
-            customer['visitsCount'] != null ? '${customer['visitsCount']} visits' : 'New',
-            style: TextStyle(
-              color: Colors.green.shade800,
-              fontWeight: FontWeight.bold,
+
+          // Customer count
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                Text(
+                  'Total: ${filteredCustomers.length} customers',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                Spacer(),
+                DropdownButton<String>(
+                  value: 'Name',
+                  items: ['Name', 'Recent', 'Visits']
+                      .map((item) => DropdownMenuItem(
+                    value: item,
+                    child: Text('Sort by: $item'),
+                  ))
+                      .toList(),
+                  onChanged: (value) {
+                    // Implement sorting
+                  },
+                ),
+              ],
             ),
           ),
-        ),
-        onTap: () {
-          // Navigate to customer details
-          _showCustomerDetails(customer);
-        },
-      ),
-    );
-    },
-    ),
-    ),
-          ],
+
+          SizedBox(height: 10),
+
+          // Customers List
+          Expanded(
+            child: isLoading
+                ? Center(child: CircularProgressIndicator())
+                : filteredCustomers.isEmpty
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    isSearching
+                        ? 'No customers match your search'
+                        : 'No customers found',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            )
+                : ListView.builder(
+              itemCount: filteredCustomers.length,
+              itemBuilder: (context, index) {
+                final customer = filteredCustomers[index];
+                final name = customer['UserName'] ?? 'Unknown';
+                final phone = customer['PhoneNumber'] ?? 'N/A';
+                final lastVisit = customer['lastVisit'] != null
+                    ? DateFormat('MMM d, yyyy').format(DateTime.parse(customer['lastVisit']))
+                    : 'Never';
+                return Card(
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  elevation: 2,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.green.shade100,
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        style: TextStyle(
+                          color: Colors.green.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      name,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 4),
+                        Text('Phone: $phone'),
+                        Text('Last Visit: $lastVisit'),
+                      ],
+                    ),
+                    trailing: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Text(
+                        customer['visitsCount'] != null ? '${customer['visitsCount']} visits' : 'New',
+                        style: TextStyle(
+                          color: Colors.green.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    onTap: () {
+                      // Navigate to customer details
+                      _showCustomerDetails(customer);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

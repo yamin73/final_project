@@ -1273,7 +1273,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
+import 'package:final_project/Views/HomePageScreen.dart';
 import '../Utills/ClientConfig.dart';
 
 class BookingScreen extends StatefulWidget {
@@ -1624,7 +1624,7 @@ class _BookingScreenState extends State<BookingScreen> {
       case 7:
         return Column(
           children: [
-            Text('Additional Notes', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text('Additional Note', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             SizedBox(height: 20),
             TextField(
               maxLines: 5,
@@ -1632,7 +1632,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 hintText: 'Describe any specific issues or requests...',
                 border: OutlineInputBorder(),
               ),
-              onChanged: (value) => handleInputChange('notes', value),
+              onChanged: (value) => handleInputChange('Note', value),
             ),
           ],
         );
@@ -1642,15 +1642,15 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
-  Future<void> insertBooking(BuildContext context) async {
-    // استخدام معرفات السيارة والخدمة بدلاً من الأسماء
-    var url = "bookings/insertBooking.php?carModelId=${formData['carModelId']}&year=${formData['year']}&serviceTypeId=${formData['serviceTypeId']}&date=${formData['date'].toString()}&time=${formData['timeSlot']}&note=${formData['notes']}";
-
+  Future insertBooking(BuildContext context, String carBrandID, String carModelId,String year, String serviceTypeID,String date,String time,String Note) async {
+    print("my link:" + serverPath);
+    //   SharedPreferences prefs = await SharedPreferences.getInstance();
+    //  String? getInfoDeviceSTR = prefs.getString("getInfoDeviceSTR");
+    var url = "users/insertBooking.php?carBrandID=" + carBrandID + "&carModelId=" + carModelId +"&year=" + year +"&serviceTypeID=" + serviceTypeID + "&date=" + date + "&time=" + time + "&Note=" + Note ;
     final response = await http.get(Uri.parse(serverPath + url));
-    print(serverPath + url);
-
-    setState(() {});
-    Navigator.pop(context);
+    print("my link:" + serverPath + url);
+    // setState(() { });
+    // Navigator.pop(context);
   }
 
   @override
@@ -1718,14 +1718,17 @@ class _BookingScreenState extends State<BookingScreen> {
                       ElevatedButton(
                         onPressed: () => {
                           print('Form submitted: $formData'),
-                          insertBooking(context),
+                          insertBooking(context,formData['carBrandID'],formData['carModelId'],formData['year'],formData['year'],formData['date'],formData['time'],formData['Note']),
+                          //Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()))
                         },
+
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
                         ),
                         child: Text('Confirm Booking'),
                       ),
+
                   ],
                 ),
 

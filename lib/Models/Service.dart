@@ -1,5 +1,5 @@
-class Service {
-  Service({
+class ServiceType {
+  ServiceType({
     this.name = "",
     this.date= "",
 
@@ -8,7 +8,7 @@ class Service {
   String name;
   String date;
 
-  factory Service.fromJson(Map<String, dynamic> json) => Service(
+  factory ServiceType.fromJson(Map<String, dynamic> json) => ServiceType(
         name: json["name"],
 
       );

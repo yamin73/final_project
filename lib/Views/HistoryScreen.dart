@@ -43,6 +43,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
     try {
       final response = await http.get(Uri.parse(serverPath + 'bookings/getBooking.php'));
+      print(serverPath + 'bookings/getBooking.php');
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = jsonDecode(response.body);
@@ -59,24 +60,24 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
             // Assign a default status if not provided by backend
             // You might want to determine this based on date or other factors
-            int bookingId = int.tryParse(data['BookingID']) ?? 0;
-            if (!bookingStatuses.containsKey(bookingId)) {
+            int bookingID = int.tryParse(data['BookingID']) ?? 0;
+            if (!bookingStatuses.containsKey(bookingID)) {
               if (bookingDate.isBefore(DateTime.now())) {
-                bookingStatuses[bookingId] = 'Completed';
+                bookingStatuses[bookingID] = 'Completed';
               } else {
-                bookingStatuses[bookingId] = 'Scheduled';
+                bookingStatuses[bookingID] = 'Scheduled';
               }
             }
 
             int carID = int.tryParse(data['carID']) ?? 0;
 
             return {
-              'id': bookingId,
+              'id': bookingID,
               'carID': carID,
-              'serviceType': serviceTypes[data['serviceTypeID']] ?? 'Unknown Service',
+              'serviceType': serviceTypes[data['serviceTypeID'].toString()] ?? 'Unknown Service',
               'date': bookingDate,
               'timeSlot': data['Time'],
-              'status': bookingStatuses[bookingId],
+              'status': bookingStatuses[bookingID],
               'notes': data['Note'] ?? '',
 
             };

@@ -90,14 +90,14 @@ class _LoginPageState extends State<LoginPage> {
         if (loginData.userID == 0) {
           // Invalid credentials
           var uti = new Utils();
-          uti.showMyDialog(context, "Error", "Username or password is wrong");
+          //uti.showMyDialog(context, "Error", "Username or password is wrong");
         } else {
           // Login successful
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', loginData.userID.toString());
           await prefs.setString('phoneNumber', _phoneNumberController.text);
           await prefs.setString('password', _passwordController.text);
-          await prefs.setString('name', loginData.Name ?? "User");
+         // await prefs.setString('name', loginData.Name ?? "User");
 
           // Check if user is admin (ID 1 or 2)
           if (loginData.userID == 1 || loginData.userID == 2) {
@@ -165,7 +165,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     checkConction();
-    fillSavedPars();
+    //fillSavedPars();
 
     return Scaffold(
       body: Container(
@@ -357,20 +357,20 @@ class _LoginPageState extends State<LoginPage> {
 }
 class checkLoginModel {
   int? userID;
-  String? Name;
-  String? userType; // You might add this field to identify admin vs regular users
+  String? phoneNumber;
+
 
   checkLoginModel({
     this.userID,
-    this.Name,
-    this.userType,
+    this.phoneNumber,
+
   });
 
   factory checkLoginModel.fromJson(Map<String, dynamic> json) {
     return checkLoginModel(
       userID: json['userID'] != null ? int.parse(json['userID'].toString()) : 0,
-      Name: json['Name'],
-      userType: json['userType'],
+      phoneNumber: json['phoneNumber'],
+
     );
   }
 }
