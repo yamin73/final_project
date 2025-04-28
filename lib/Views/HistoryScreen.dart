@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Models/booking.dart';
 import '../Utills/ClientConfig.dart';
+import '../Utills/ApiService.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   @override
@@ -13,83 +16,46 @@ class BookingHistoryScreen extends StatefulWidget {
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   String filterStatus = 'All';
   Set<int> expandedItems = {};
-  List<Map<String, dynamic>> bookings = [];
+  List<Booking> bookings = [];
   bool isLoading = true;
   String? errorMessage;
-
-  // Map to store service types based on serviceID
-  final Map<String, String> serviceTypes = {
-    '1': 'Regular Maintenance',
-    '2': 'Full Inspection',
-    '3': 'Repair',
-    // Add more service types as needed
-  };
-
-  // Map to track booking statuses - this would be from your backend
-  // You might need to adjust this based on your actual data structure
-  final Map<int, String> bookingStatuses = {};
+  String? userID;
 
   @override
   void initState() {
     super.initState();
-    fetchBookings();
+    _getUserID();
   }
 
-  Future<void> fetchBookings() async {
+  Future<void> _getUserID() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? id = prefs.getString('token');
+    setState(() {
+      userID = id;
+    });
+
+    if (id != null) {
+      fetchBookings(id);
+    } else {
+      setState(() {
+        errorMessage = 'User not logged in. Please log in again.';
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> fetchBookings(String userID) async {
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
 
     try {
-      final response = await http.get(Uri.parse(serverPath + 'bookings/getBooking.php'));
-      print(serverPath + 'bookings/getBooking.php');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonData = jsonDecode(response.body);
-
-        setState(() {
-          bookings = jsonData.map((data) {
-            // Parse the date from the backend format
-            DateTime? bookingDate;
-            try {
-              bookingDate = DateTime.parse(data['Date']);
-            } catch (e) {
-              bookingDate = DateTime.now(); // Fallback
-            }
-
-            // Assign a default status if not provided by backend
-            // You might want to determine this based on date or other factors
-            int bookingID = int.tryParse(data['BookingID']) ?? 0;
-            if (!bookingStatuses.containsKey(bookingID)) {
-              if (bookingDate.isBefore(DateTime.now())) {
-                bookingStatuses[bookingID] = 'Completed';
-              } else {
-                bookingStatuses[bookingID] = 'Scheduled';
-              }
-            }
-
-            int carID = int.tryParse(data['carID']) ?? 0;
-
-            return {
-              'id': bookingID,
-              'carID': carID,
-              'serviceType': serviceTypes[data['serviceTypeID'].toString()] ?? 'Unknown Service',
-              'date': bookingDate,
-              'timeSlot': data['Time'],
-              'status': bookingStatuses[bookingID],
-              'notes': data['Note'] ?? '',
-
-            };
-          }).toList().cast<Map<String, dynamic>>();
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          errorMessage = 'Failed to load bookings. Server error ${response.statusCode}';
-          isLoading = false;
-        });
-      }
+      final bookingsList = await ApiService.getUserBookings(userID);
+      setState(() {
+        bookings = bookingsList;
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         errorMessage = 'Failed to load bookings: ${e.toString()}';
@@ -98,14 +64,26 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     }
   }
 
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
   Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'completed':
         return Colors.green;
       case 'scheduled':
         return Colors.blue;
-      case 'in progress':
+      case 'today':
         return Colors.orange;
+      case 'in progress':
+        return Colors.amber;
       case 'cancelled':
         return Colors.red;
       default:
@@ -113,11 +91,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     }
   }
 
-  List<Map<String, dynamic>> getFilteredBookings() {
+  List<Booking> getFilteredBookings() {
     if (filterStatus == 'All') {
       return bookings;
     }
-    return bookings.where((booking) => booking['status'] == filterStatus).toList();
+    return bookings.where((booking) => booking.status.toLowerCase() == filterStatus.toLowerCase()).toList();
   }
 
   Widget buildStatusChip(String? status) {
@@ -172,6 +150,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                 child: Text('Scheduled'),
               ),
               PopupMenuItem(
+                value: 'Today',
+                child: Text('Today'),
+              ),
+              PopupMenuItem(
                 value: 'In Progress',
                 child: Text('In Progress'),
               ),
@@ -183,7 +165,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           ),
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: fetchBookings,
+            onPressed: () => userID != null ? fetchBookings(userID!) : _showErrorSnackBar('User not logged in'),
           ),
         ],
       ),
@@ -201,7 +183,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             ),
             SizedBox(height: 16),
             ElevatedButton(
-              onPressed: fetchBookings,
+              onPressed: () => userID != null ? fetchBookings(userID!) : _showErrorSnackBar('User not logged in'),
               child: Text('Try Again'),
             ),
           ],
@@ -214,7 +196,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         itemCount: filteredBookings.length,
         itemBuilder: (context, index) {
           final booking = filteredBookings[index];
-          final isExpanded = expandedItems.contains(booking['id']);
+          final isExpanded = expandedItems.contains(int.tryParse(booking.id ?? '0') ?? 0);
 
           return Card(
             margin: EdgeInsets.only(bottom: 16),
@@ -230,7 +212,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     ),
                   ),
                   title: Text(
-                    '${booking['carBrand']} ${booking['carModel']} ${booking['year']}',
+                    booking.carDetails ?? 'Vehicle Details Not Available',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
@@ -243,7 +225,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         children: [
                           Icon(Icons.build, size: 16, color: Colors.grey),
                           SizedBox(width: 4),
-                          Text(booking['serviceType']),
+                          Text(booking.serviceType),
                         ],
                       ),
                       SizedBox(height: 4),
@@ -252,7 +234,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           Icon(Icons.access_time, size: 16, color: Colors.grey),
                           SizedBox(width: 4),
                           Text(
-                            '${DateFormat('MMM dd, yyyy').format(booking['date'])} at ${booking['timeSlot']}',
+                            '${booking.formattedDate} at ${booking.timeSlot}',
                           ),
                         ],
                       ),
@@ -261,7 +243,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      buildStatusChip(booking['status']),
+                      buildStatusChip(booking.status),
                       IconButton(
                         icon: Icon(
                           isExpanded ? Icons.expand_less : Icons.expand_more,
@@ -270,9 +252,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         onPressed: () {
                           setState(() {
                             if (isExpanded) {
-                              expandedItems.remove(booking['id']);
+                              expandedItems.remove(int.tryParse(booking.id ?? '0') ?? 0);
                             } else {
-                              expandedItems.add(booking['id']);
+                              expandedItems.add(int.tryParse(booking.id ?? '0') ?? 0);
                             }
                           });
                         },
@@ -295,7 +277,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           ),
                         ),
                         SizedBox(height: 8),
-                        Text(booking['notes'] ?? 'No additional notes.'),
+                        Text(booking.notes.isNotEmpty ? booking.notes : 'No additional notes.'),
                         SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -308,7 +290,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                               ),
                             ),
                             Text(
-                              '#${booking['id']}',
+                              '#${booking.id}',
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.blue,
