@@ -1,43 +1,47 @@
-class User {
-  User({
-    this.id = "",
-    this.name = "",
-    this.phone = "",
-    this.email = "",
-    this.password = "",
-    this.carCount = 0,
-    this.bookingCount = 0,
-    this.nextBooking = "",
+class Car {
+  final String? carID;
+  final String? carName;
+  final String? carModel;
+  final String? carBrand;
+  final String? carLicense;
+  final String? year;
+  final String? color;
+  final String? ownerID;
+
+  Car({
+    this.carID,
+    this.carName,
+    this.carModel,
+    this.carBrand,
+    this.carLicense,
+    this.year,
+    this.color,
+    this.ownerID,
   });
 
-  String id;
-  String name;
-  String phone;
-  String email;
-  String password;
-  int carCount;
-  int bookingCount;
-  String nextBooking;
+  factory Car.fromJson(Map<String, dynamic> json) {
+    return Car(
+      carID: json['carID'],
+      carName: json['carName'],
+      carModel: json['carModel'],
+      carBrand: json['carBrand'],
+      carLicense: json['carLicense'],
+      year: json['year'],
+      color: json['color'],
+      ownerID: json['ownerID'],
+    );
+  }
 
-  factory User.fromJson(Map<String, dynamic> json) => User(
-    id: json["userID"] ?? "",
-    name: json["Name"] ?? "",
-    phone: json["phoneNumber"] ?? "",
-    email: json["email"] ?? "",
-    password: json["password"] ?? "",
-    carCount: json["carCount"] != null ? int.tryParse(json["carCount"].toString()) ?? 0 : 0,
-    bookingCount: json["bookingCount"] != null ? int.tryParse(json["bookingCount"].toString()) ?? 0 : 0,
-    nextBooking: json["nextBooking"] ?? "",
-  );
-
-  Map<String, dynamic> toJson() => {
-    "userID": id,
-    "Name": name,
-    "phoneNumber": phone,
-    "email": email,
-    "password": password,
-    "carCount": carCount,
-    "bookingCount": bookingCount,
-    "nextBooking": nextBooking,
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      'carID': carID,
+      'carName': carName,
+      'carModel': carModel,
+      'carBrand': carBrand,
+      'carLicense': carLicense,
+      'year': year,
+      'color': color,
+      'ownerID': ownerID,
+    };
+  }
 }

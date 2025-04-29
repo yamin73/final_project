@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:final_project/Utills/ClientConfig.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:final_project/Models/UserModel.dart';
 import 'package:final_project/Models/booking.dart';
 import 'package:final_project/Models/Car.dart';
@@ -8,6 +8,8 @@ import 'package:final_project/ManagerModels/CarHistoryModel.dart';
 import 'package:final_project/ManagerModels/BookingManagerModel.dart';
 import 'package:final_project/ManagerModels/CustomerManagerModel.dart';
 import 'package:final_project/ManagerModels/ServiceTypeMode.dart';
+
+import 'ClientConfig.dart';
 
 class ApiService {
   // Authentication APIs
@@ -60,7 +62,68 @@ class ApiService {
     }
   }
 
-  // Car APIs
-  static Future<List<Car>> getUserCars(String userID) async {
+  // Booking History API
+  static Future<List<Booking>> getUserBookings(String userID) async {
     try {
-      final url = Uri.parse('${serverPath}cars/getUserCars.php?userID=$userID');
+      final url = Uri.parse('${serverPath}bookings/getBookingHistory.php?userID=$userID');
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+
+        // Check if it's an error response
+        if (jsonData is Map && jsonData.containsKey('result') && jsonData['result'] == '0') {
+          throw Exception(jsonData['message'] ?? 'Failed to load bookings');
+        }
+
+        // Convert the JSON data to a list of Booking objects
+        List<Booking> bookings = [];
+        if (jsonData is List) {
+          for (var item in jsonData) {
+            bookings.add(Booking.fromJson(item));
+          }
+        }
+
+        return bookings;
+      } else {
+        throw Exception('Failed to load bookings. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching bookings: $e');
+    }
+  }
+
+  // Manager APIs
+  static Future<List<CarHistoryModel>> getAllCarsHistory() async {
+    try {
+      final url = Uri.parse('${serverPath}cars/getCarsHistory.php');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        return jsonData.map((item) => CarHistoryModel.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load cars history: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<List<BookingManagerModel>> getDailyBookings(String date) async {
+    try {
+      final url = Uri.parse('${serverPath}bookings/getDailyBookings.php?date=$date');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        return jsonData.map((item) => BookingManagerModel.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load daily bookings: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+}

@@ -1864,9 +1864,14 @@ class _BookingScreenState extends State<BookingScreen> {
       final response = await http.get(Uri.parse(serverPath + 'cars/getCarBrands.php'));
 
       if (response.statusCode == 200) {
-        setState(() {
-          carBrands = json.decode(response.body);
-        });
+        final decodedResponse = json.decode(response.body);
+        if (decodedResponse is List) {
+          setState(() {
+            carBrands = decodedResponse;
+          });
+        } else {
+          throw Exception('Unexpected response format for car brands');
+        }
       } else {
         throw Exception('Failed to load car brands: ${response.statusCode}');
       }
@@ -1884,16 +1889,24 @@ class _BookingScreenState extends State<BookingScreen> {
     });
 
     try {
-      var url = serverPath + 'cars/getCarModels.php?brandId=$brandId';
+      var url = '${serverPath}cars/getCarModels.php?brandId=${Uri.encodeComponent(brandId)}';
       print("Loading car models from: $url");
 
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        setState(() {
-          carModels = json.decode(response.body);
-          isLoading = false;
-        });
+        final decodedResponse = json.decode(response.body);
+        if (decodedResponse is List) {
+          setState(() {
+            carModels = decodedResponse;
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            isLoading = false;
+            errorMessage = 'Unexpected response format for car models';
+          });
+        }
       } else {
         setState(() {
           isLoading = false;
@@ -1911,15 +1924,20 @@ class _BookingScreenState extends State<BookingScreen> {
   // Function for fetching service types
   Future<void> fetchServiceTypes() async {
     try {
-      var url = serverPath + 'bookings/getServiceTypes.php';
+      var url = '${serverPath}bookings/getServiceTypes.php';
       print("Loading service types from: $url");
 
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        setState(() {
-          serviceTypes = json.decode(response.body);
-        });
+        final decodedResponse = json.decode(response.body);
+        if (decodedResponse is List) {
+          setState(() {
+            serviceTypes = decodedResponse;
+          });
+        } else {
+          throw Exception('Unexpected response format for service types');
+        }
       } else {
         throw Exception('Failed to load service types: ${response.statusCode}');
       }
@@ -1954,7 +1972,7 @@ class _BookingScreenState extends State<BookingScreen> {
       formData[field] = value;
 
       // If changing car brand, fetch models for that brand
-      if (field == 'carBrandId') {
+      if (field == 'carBrandId' && value != null && value.toString().isNotEmpty) {
         fetchCarModels(value);
         // Reset car model selection
         formData['carModel'] = '';
@@ -2033,8 +2051,19 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Future<void> _submitBooking() async {
-    if (userID == null) {
+    if (userID == null || userID!.isEmpty) {
       _showErrorSnackBar('User not logged in. Please log in again.');
+      return;
+    }
+
+    // Additional validation before submission
+    if (formData['carBrandId'] == '' ||
+        formData['carModelId'] == '' ||
+        formData['year'] == '' ||
+        formData['serviceTypeId'] == '' ||
+        formData['date'] == null ||
+        formData['timeSlot'] == '') {
+      _showErrorSnackBar('Please complete all required fields');
       return;
     }
 
@@ -2047,41 +2076,67 @@ class _BookingScreenState extends State<BookingScreen> {
       String formattedDate = '';
       if (formData['date'] != null) {
         formattedDate = DateFormat('yyyy-MM-dd').format(formData['date']);
+      } else {
+        formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
       }
 
-      print("Submitting booking with data:");
-      print("userID: $userID");
-      print("carBrandId: ${formData['carBrandId']}");
-      print("carModelId: ${formData['carModelId']}");
-      print("year: ${formData['year']}");
-      print("serviceTypeId: ${formData['serviceTypeId']}");
-      print("date: $formattedDate");
-      print("time: ${formData['timeSlot']}");
-      print("notes: ${formData['notes']}");
+      // Prepare data with correct capitalization that matches the PHP script
+      Map<String, String> requestData = {
+        'userID': userID ?? '',
+        'carBrandID': formData['carBrandId'].toString(),
+        'carModelID': formData['carModelId'].toString(), // Changed to uppercase ID
+        'year': formData['year'].toString(),
+        'serviceTypeID': formData['serviceTypeId'].toString(), // Changed to uppercase ID
+        'date': formattedDate,
+        'time': formData['timeSlot'],
+        'Note': formData['notes'] ?? ''
+      };
 
-      final url = Uri.parse('${serverPath}users/insertBooking.php?userID=$userID&carBrandID=${formData['carBrandId']}&carModelId=${formData['carModelId']}&year=${formData['year']}&serviceTypeID=${formData['serviceTypeId']}&date=$formattedDate&time=${formData['timeSlot']}&Note=${formData['notes'] ?? ''}');
+      print("Submitting booking with data: $requestData");
 
-      print("Submitting to URL: ${url.toString()}");
+      // Option 1: Use GET method with query parameters
+      final queryString = Uri(queryParameters: requestData).query;
+      final url = Uri.parse('${serverPath}bookings/insertBooking.php?$queryString');
+
+      print("Request URL: $url");
 
       final response = await http.get(url);
 
-      print("Response: ${response.body}");
+      // Option 2 (alternative): Use POST method with request body only
+      // final url = Uri.parse('${serverPath}bookings/insertBooking.php');
+      // final response = await http.post(
+      //   url,
+      //   body: requestData,
+      // );
+
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
 
       if (response.statusCode == 200) {
-        var result = json.decode(response.body);
+        try {
+          var result = json.decode(response.body);
 
-        if (result['result'] == '1') {
-          _showSuccessSnackBar('Booking created successfully!');
+          if (result is Map && result.containsKey('result') && int.parse(result['result']) > 0) {
+            _showSuccessSnackBar('Booking created successfully!');
 
-          // Navigate to home after a short delay
-          Future.delayed(Duration(seconds: 1), () {
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomePage())
-            );
-          });
-        } else {
-          _showErrorSnackBar('Failed to create booking: ${result['message'] ?? "Unknown error"}');
+            // Navigate to home after a short delay
+            Future.delayed(Duration(seconds: 1), () {
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomePage())
+              );
+            });
+          } else {
+            String errorMsg = '';
+            if (result is Map && result.containsKey('message')) {
+              errorMsg = result['message'];
+            } else {
+              errorMsg = "Unknown error";
+            }
+            _showErrorSnackBar('Failed to create booking: $errorMsg');
+          }
+        } catch (e) {
+          _showErrorSnackBar('Error processing response: $e');
         }
       } else {
         _showErrorSnackBar('Server error: ${response.statusCode}');
@@ -2128,279 +2183,286 @@ class _BookingScreenState extends State<BookingScreen> {
     }
 
     switch (step) {
-    case 1:
-    return Column(
-    children: [
-    Text('Select Car Brand', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-    SizedBox(height: 20),
-    carBrands.isEmpty
-    ? Center(child: Text('No car brands available. Please try again.'))
-        : ConstrainedBox(
-    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
-    child: SingleChildScrollView(
-    child: GridView.builder(
-    shrinkWrap: true,
-    physics: NeverScrollableScrollPhysics(),
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-    childAspectRatio: 2,
-    crossAxisSpacing: 10,
-    mainAxisSpacing: 10,
-    ),
-    itemCount: carBrands.length,
-    itemBuilder: (context, index) {
-    final brand = carBrands[index];
-    return ElevatedButton(
-    onPressed: () {
-    handleInputChange('carBrand', brand['carBrandsName']);
-    handleInputChange('carBrandId', brand['carBrandsID']);
-    },
-    style: ElevatedButton.styleFrom(
-    backgroundColor: formData['carBrandId'] == brand['carBrandsID'] ? Colors.blue : Colors.white,
-    foregroundColor: formData['carBrandId'] == brand['carBrandsID'] ? Colors.white : Colors.black,
-    ),
-    child: Text(brand['carBrandsName']),
-    );
-    },
-    ),
-    ),
-    ),
-    ],
-    );
+      case 1:
+        return Column(
+          children: [
+            Text('Select Car Brand', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            carBrands.isEmpty
+                ? Center(child: Text('No car brands available. Please try again.'))
+                : ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+              child: SingleChildScrollView(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: carBrands.length,
+                  itemBuilder: (context, index) {
+                    final brand = carBrands[index];
+                    final brandId = brand['carBrandsID'] ?? '';
+                    final brandName = brand['carBrandsName'] ?? '';
+                    return ElevatedButton(
+                      onPressed: () {
+                        handleInputChange('carBrand', brandName);
+                        handleInputChange('carBrandId', brandId);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: formData['carBrandId'] == brandId ? Colors.blue : Colors.white,
+                        foregroundColor: formData['carBrandId'] == brandId ? Colors.white : Colors.black,
+                      ),
+                      child: Text(brandName),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
 
-    case 2:
-    return Column(
-    children: [
-    Text('Select Car Model', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-    SizedBox(height: 20),
-    carModels.isEmpty
-    ? Center(
-    child: Column(
-    children: [
-    Text('No models found for ${formData['carBrand']}'),
-    SizedBox(height: 20),
-    TextField(
-    decoration: InputDecoration(
-    labelText: 'Enter Model Manually',
-    border: OutlineInputBorder(),
-    hintText: 'Type your car model here',
-    ),
-    onChanged: (value) {
-    handleInputChange('carModel', value);
-    // Use a placeholder ID for custom models
-    handleInputChange('carModelId', '0');
-    },
-    ),
-    ],
-    ),
-    )
-        : ConstrainedBox(
-    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
-    child: SingleChildScrollView(
-    child: GridView.builder(
-    shrinkWrap: true,
-    physics: NeverScrollableScrollPhysics(),
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-    childAspectRatio: 2,
-    crossAxisSpacing: 10,
-    mainAxisSpacing: 10,
-    ),
-    itemCount: carModels.length,
-    itemBuilder: (context, index) {
-    final model = carModels[index];
-    return ElevatedButton(
-    onPressed: () {
-    handleInputChange('carModel', model['carModelsName']);
-    handleInputChange('carModelId', model['carModelsID']);
-    },
-    style: ElevatedButton.styleFrom(
-    backgroundColor: formData['carModelId'] == model['carModelsID'] ? Colors.blue : Colors.white,
-    foregroundColor: formData['carModelId'] == model['carModelsID'] ? Colors.white : Colors.black,
-    ),
-    child: Text(model['carModelsName']),
-    );
-    },
-    ),
-    ),
-    ),
-    ],
-    );
+      case 2:
+        return Column(
+          children: [
+            Text('Select Car Model', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            carModels.isEmpty
+                ? Center(
+              child: Column(
+                children: [
+                  Text('No models found for ${formData['carBrand']}'),
+                  SizedBox(height: 20),
+                  TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Enter Model Manually',
+                      border: OutlineInputBorder(),
+                      hintText: 'Type your car model here',
+                    ),
+                    onChanged: (value) {
+                      handleInputChange('carModel', value);
+                      // Use a placeholder ID for custom models
+                      handleInputChange('carModelId', '0');
+                    },
+                  ),
+                ],
+              ),
+            )
+                : ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+              child: SingleChildScrollView(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: carModels.length,
+                  itemBuilder: (context, index) {
+                    final model = carModels[index];
+                    final modelId = model['carModelsID'] ?? '';
+                    final modelName = model['carModelsName'] ?? '';
+                    return ElevatedButton(
+                      onPressed: () {
+                        handleInputChange('carModel', modelName);
+                        handleInputChange('carModelId', modelId);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: formData['carModelId'] == modelId ? Colors.blue : Colors.white,
+                        foregroundColor: formData['carModelId'] == modelId ? Colors.white : Colors.black,
+                      ),
+                      child: Text(modelName),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
 
-    case 3:
-    return Column(
-    children: [
-    Text('Select Manufacturing Year', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-    SizedBox(height: 20),
-    ConstrainedBox(
-    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
-    child: SingleChildScrollView(
-    child: GridView.builder(
-    shrinkWrap: true,
-    physics: NeverScrollableScrollPhysics(),
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 3,
-    childAspectRatio: 1.5,
-    crossAxisSpacing: 10,
-    mainAxisSpacing: 10,
-    ),
-    itemCount: years.length,
-    itemBuilder: (context, index) {
-    final year = years[index];
-    return ElevatedButton(
-    onPressed: () => handleInputChange('year', year),
-    style: ElevatedButton.styleFrom(
-    backgroundColor: formData['year'] == year ? Colors.blue : Colors.white,
-    foregroundColor: formData['year'] == year ? Colors.white : Colors.black,
-    ),
-    child: Text(year.toString()),
-    );
-    },
-    ),
-    ),
-    ),
-    ],
-    );
+      case 3:
+        return Column(
+          children: [
+            Text('Select Manufacturing Year', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+              child: SingleChildScrollView(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1.5,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: years.length,
+                  itemBuilder: (context, index) {
+                    final year = years[index];
+                    return ElevatedButton(
+                      onPressed: () => handleInputChange('year', year),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: formData['year'] == year ? Colors.blue : Colors.white,
+                        foregroundColor: formData['year'] == year ? Colors.white : Colors.black,
+                      ),
+                      child: Text(year.toString()),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
 
-    case 4:
-    return Column(
-    children: [
-    Text('Select Service Type', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-    SizedBox(height: 20),
-    serviceTypes.isEmpty
-    ? Center(child: Text('No service types available. Please try again.'))
-        : ConstrainedBox(
-    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
-    child: SingleChildScrollView(
-    child: GridView.builder(
-    shrinkWrap: true,
-    physics: NeverScrollableScrollPhysics(),
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-    childAspectRatio: 2,
-    crossAxisSpacing: 10,
-    mainAxisSpacing: 10,
-    ),
-    itemCount: serviceTypes.length,
-    itemBuilder: (context, index) {
-    final service = serviceTypes[index];
-    return ElevatedButton(
-    onPressed: () {
-    handleInputChange('serviceType', service['serviceTypeName']);
-    handleInputChange('serviceTypeId', service['serviceTypeID']);
-    },
-    style: ElevatedButton.styleFrom(
-    backgroundColor: formData['serviceTypeId'] == service['serviceTypeID'] ? Colors.blue : Colors.white,
-    foregroundColor: formData['serviceTypeId'] == service['serviceTypeID'] ? Colors.white : Colors.black,
-    ),
-    child: Text(service['serviceTypeName']),
-    );
-    },
-    ),
-    ),
-    ),
-    ],
-    );
+      case 4:
+        return Column(
+          children: [
+            Text('Select Service Type', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            serviceTypes.isEmpty
+                ? Center(child: Text('No service types available. Please try again.'))
+                : ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+              child: SingleChildScrollView(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: serviceTypes.length,
+                  itemBuilder: (context, index) {
+                    final service = serviceTypes[index];
+                    final serviceId = service['serviceTypeID'] ?? '';
+                    final serviceName = service['serviceTypeName'] ?? '';
+                    return ElevatedButton(
+                      onPressed: () {
+                        handleInputChange('serviceType', serviceName);
+                        handleInputChange('serviceTypeId', serviceId);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: formData['serviceTypeId'] == serviceId ? Colors.blue : Colors.white,
+                        foregroundColor: formData['serviceTypeId'] == serviceId ? Colors.white : Colors.black,
+                      ),
+                      child: Text(serviceName),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
 
-    case 5:
-    return Column(
-    children: [
-    Text('Select Date', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-    SizedBox(height: 20),
-    TableCalendar(
-    firstDay: DateTime.now(),
-    lastDay: DateTime.now().add(Duration(days: 365)),
-    focusedDay: formData['date'] ?? DateTime.now(),
-    selectedDayPredicate: (day) => isSameDay(formData['date'], day),
-    onDaySelected: (selectedDay, focusedDay) => handleInputChange('date', selectedDay),
-    calendarStyle: CalendarStyle(
-    todayDecoration: BoxDecoration(
-    color: Colors.blue.withOpacity(0.3),
-    shape: BoxShape.circle,
-    ),
-    selectedDecoration: BoxDecoration(
-    color: Colors.blue,
-    shape: BoxShape.circle,
-    ),
-    ),
-    // Disable past dates
-    enabledDayPredicate: (day) => !day.isBefore(DateTime.now().subtract(Duration(days: 1))),
-    ),
-    ],
-    );
+      case 5:
+        return Column(
+          children: [
+            Text('Select Date', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            TableCalendar(
+              firstDay: DateTime.now(),
+              lastDay: DateTime.now().add(Duration(days: 365)),
+              focusedDay: formData['date'] ?? DateTime.now(),
+              selectedDayPredicate: (day) => isSameDay(formData['date'], day),
+              onDaySelected: (selectedDay, focusedDay) => handleInputChange('date', selectedDay),
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              // Disable past dates
+              enabledDayPredicate: (day) => !day.isBefore(DateTime.now().subtract(Duration(days: 1))),
+            ),
+          ],
+        );
 
-    case 6:
-    return Column(
-    children: [
-    Text('Select Available Time', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-    SizedBox(height: 20),
-    ConstrainedBox(
-    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
-    child: SingleChildScrollView(
-    child: GridView.builder(
-    shrinkWrap: true,
-    physics: NeverScrollableScrollPhysics(),
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-    childAspectRatio: 2,
-    crossAxisSpacing: 10,
-    mainAxisSpacing: 10,
-    ),
-    itemCount: timeSlots.length,
-    itemBuilder: (context, index) {
-    final time = timeSlots[index];
-    return ElevatedButton(
-    onPressed: () => handleInputChange('timeSlot', time),
-    style: ElevatedButton.styleFrom(
-    backgroundColor: formData['timeSlot'] == time ? Colors.blue : Colors.white,
-    foregroundColor: formData['timeSlot'] == time ? Colors.white : Colors.black,
-    ),
-    child: Text(time),
-    );
-    },
-    ),
-    ),
-    ),
-    ],
-    );
+      case 6:
+        return Column(
+          children: [
+            Text('Select Available Time', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+              child: SingleChildScrollView(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: timeSlots.length,
+                  itemBuilder: (context, index) {
+                    final time = timeSlots[index];
+                    return ElevatedButton(
+                      onPressed: () => handleInputChange('timeSlot', time),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: formData['timeSlot'] == time ? Colors.blue : Colors.white,
+                        foregroundColor: formData['timeSlot'] == time ? Colors.white : Colors.black,
+                      ),
+                      child: Text(time),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
 
-    case 7:
-    return Column(
-    children: [
-    Text('Additional Notes', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-    SizedBox(height: 20),
-    TextField(
-    maxLines: 5,
-    decoration: InputDecoration(
-    hintText: 'Describe any specific issues or requests...',
-    border: OutlineInputBorder(),
-    ),
-    onChanged: (value) => handleInputChange('notes', value),
-    ),
-    SizedBox(height: 20),
-    // Booking Summary
-    Container(margin: EdgeInsets.only(top: 10),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Booking Summary:', style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('Vehicle: ${formData['carBrand']} ${formData['carModel']} (${formData['year']})'),
-          Text('Service: ${formData['serviceType']}'),
-          Text('Date: ${_formatDate(formData['date'])}'),
-          Text('Time: ${formData['timeSlot']}'),
-          if (formData['notes']?.isNotEmpty ?? false)
-            Text('Notes: ${formData['notes']}'),
-        ],
-      ),
-    ),
-    ],
-    );
+      case 7:
+        return Column(
+          children: [
+            Text('Additional Notes', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            TextField(
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: 'Describe any specific issues or requests...',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => handleInputChange('notes', value),
+            ),
+            SizedBox(height: 20),
+            // Booking Summary
+            Container(
+              margin: EdgeInsets.only(top: 10),
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Booking Summary:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  Text('Vehicle: ${formData['carBrand']} ${formData['carModel']} (${formData['year']})'),
+                  Text('Service: ${formData['serviceType']}'),
+                  Text('Date: ${_formatDate(formData['date'])}'),
+                  Text('Time: ${formData['timeSlot']}'),
+                  if (formData['notes']?.isNotEmpty ?? false)
+                    Text('Notes: ${formData['notes']}'),
+                ],
+              ),
+            ),
+          ],
+        );
 
       default:
         return Container();
