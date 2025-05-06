@@ -97,7 +97,8 @@ class ApiService {
   // Manager APIs
   static Future<List<CarHistoryModel>> getAllCarsHistory() async {
     try {
-      final url = Uri.parse('${serverPath}cars/getCarsHistory.php');
+      // We'll use the existing getCars.php endpoint but join with required tables
+      final url = Uri.parse('${serverPath}cars/getAllCarsHistory.php');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {

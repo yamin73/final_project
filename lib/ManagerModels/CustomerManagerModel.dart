@@ -1,5 +1,5 @@
 class CustomerManagerModel {
-  final String? clientId;
+  final int? clientId;
   final String? userName;
   final String? phoneNumber;
   final String? email;

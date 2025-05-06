@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../Utills/ClientConfig.dart';
 import '../ManagerModels/CarHistoryModel.dart';
-import '../Utills/ApiService.dart';
 
 class CarsHistory extends StatefulWidget {
   const CarsHistory({Key? key}) : super(key: key);
@@ -40,18 +39,76 @@ class _CarsHistoryState extends State<CarsHistory> {
     });
 
     try {
-      final cars = await ApiService.getAllCarsHistory();
-      setState(() {
-        carsList = cars;
-        filteredCars = cars;
-        isLoading = false;
-      });
+      // Try using getCars.php instead of getAllCarsHistory.php
+      final url = Uri.parse('${serverPath}cars/getCars.php');
+      print("Fetching cars from: $url");
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        try {
+          print("Response: ${response.body}");
+          final List<dynamic> data = json.decode(response.body);
+
+          // Convert raw data to CarHistoryModel objects and add more info
+          List<CarHistoryModel> cars = [];
+
+          for (var item in data) {
+            print("Processing item: $item");
+            // Make sure all values are properly converted to strings
+            final carId = item['carID']?.toString() ?? '';
+            final userId = item['userID']?.toString() ?? '';
+            final carModelId = item['carModelID']?.toString() ?? '';
+            final year = item['year']?.toString() ?? '';
+            final carModelName = item['carModelName']?.toString() ?? '';
+            final carBrandName = item['carBrandName']?.toString() ?? '';
+
+            // Create a CarHistoryModel with available data
+            final car = CarHistoryModel(
+                carId: carId,
+                carBrand: carBrandName,
+                carModel: carModelName,
+                year: year,
+                // Add some default values for missing fields
+                lastVisit: 'Unknown',
+                visitsCount: 0,
+                ownerName: 'Owner #$userId',
+                ownerPhone: 'Not available'
+            );
+
+            cars.add(car);
+          }
+
+          setState(() {
+            carsList = cars;
+            filteredCars = cars;
+            isLoading = false;
+          });
+        } catch (e) {
+          print("Error parsing data: $e");
+          setState(() {
+            isLoading = false;
+            errorMessage = 'Failed to parse car data: $e\nResponse: ${response.body.substring(0, min(100, response.body.length))}...';
+          });
+        }
+      } else {
+        print("Server error: ${response.statusCode}");
+        setState(() {
+          isLoading = false;
+          errorMessage = 'Server error: ${response.statusCode}';
+        });
+      }
     } catch (e) {
+      print("Network error: $e");
       setState(() {
         isLoading = false;
-        errorMessage = 'Failed to load cars history: $e';
+        errorMessage = 'Network error: $e';
       });
     }
+  }
+
+  int min(int a, int b) {
+    return a < b ? a : b;
   }
 
   void _showErrorSnackBar(String message) {
@@ -146,12 +203,7 @@ class _CarsHistoryState extends State<CarsHistory> {
                 Expanded(
                   child: _buildStatCard(
                     'Recent Services',
-                    carsList.where((car) =>
-                    car.lastVisit != null &&
-                        car.lastVisit != 'Never' &&
-                        DateTime.tryParse(car.lastVisit!) != null &&
-                        DateTime.parse(car.lastVisit!).isAfter(DateTime.now().subtract(Duration(days: 30)))
-                    ).length.toString(),
+                    '0', // We don't have this data yet
                     Icons.history,
                     Colors.green,
                   ),

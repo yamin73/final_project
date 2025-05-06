@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../Utills/ClientConfig.dart';
 import '../ManagerModels/BookingManagerModel.dart';
-import '../Utills/ApiService.dart';
 
 class HomeManagerPage extends StatefulWidget {
   const HomeManagerPage({Key? key}) : super(key: key);
@@ -35,7 +34,6 @@ class _HomeManagerPageState extends State<HomeManagerPage> {
     });
 
     try {
-      // Format date as expected by the API (YYYY-MM-DD)
       String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
       print("⏳ Fetching bookings for date: $formattedDate");
@@ -65,54 +63,39 @@ class _HomeManagerPageState extends State<HomeManagerPage> {
         // Parse the JSON response
         try {
           print("🔄 Attempting to parse JSON...");
-          final dynamic decodedData = json.decode(response.body);
+          final List<dynamic> decodedData = json.decode(response.body);
           print("✅ JSON parsed successfully");
           print("📊 Data type: ${decodedData.runtimeType}");
+          print("📋 Found ${decodedData.length} bookings in response");
 
-          // Handle the new response format (object with bookings array)
-          if (decodedData is Map<String, dynamic> && decodedData.containsKey('bookings')) {
-            final bookingsData = decodedData['bookings'];
-            print("📋 Found bookings array in response");
-
-            if (bookingsData is List) {
-              print("📋 Found ${bookingsData.length} bookings in response");
-
-              // Convert each JSON object to a BookingManagerModel
-              List<BookingManagerModel> fetchedBookings = [];
-              for (var item in bookingsData) {
-                print("🔄 Processing booking item: $item");
-                try {
-                  BookingManagerModel booking = BookingManagerModel.fromJson(item);
-                  print("✅ Successfully created booking object: $booking");
-                  fetchedBookings.add(booking);
-                } catch (e) {
-                  print("❌ Error creating booking from JSON: $e");
-                  print("❌ Problematic JSON: $item");
-                }
-              }
-
-              setState(() {
-                todayBookings = fetchedBookings;
-
-                // Calculate stats
-                totalBookings = fetchedBookings.length;
-                completedBookings = fetchedBookings.where((booking) =>
-                (booking.status?.toLowerCase() ?? '') == 'completed').length;
-                pendingBookings = fetchedBookings.where((booking) =>
-                (booking.status?.toLowerCase() ?? '') == 'scheduled' ||
-                    (booking.status?.toLowerCase() ?? '') == 'in progress').length;
-
-                isLoading = false;
-              });
-              print("🎉 UI updated with ${fetchedBookings.length} bookings");
-            } else {
-              print("⚠️ Bookings data is not a List: ${bookingsData.runtimeType}");
-              throw Exception('Invalid bookings format: Expected a list, got ${bookingsData.runtimeType}');
+          // Convert each JSON object to a BookingManagerModel
+          List<BookingManagerModel> fetchedBookings = [];
+          for (var item in decodedData) {
+            print("🔄 Processing booking item: $item");
+            try {
+              BookingManagerModel booking = BookingManagerModel.fromJson(item);
+              print("✅ Successfully created booking object");
+              fetchedBookings.add(booking);
+            } catch (e) {
+              print("❌ Error creating booking from JSON: $e");
+              print("❌ Problematic JSON: $item");
             }
-          } else {
-            print("⚠️ Response doesn't contain expected 'bookings' key or is not a Map");
-            throw Exception('Invalid response format: Expected an object with a bookings array');
           }
+
+          setState(() {
+            todayBookings = fetchedBookings;
+
+            // Calculate stats
+            totalBookings = fetchedBookings.length;
+            completedBookings = fetchedBookings.where((booking) =>
+            (booking.status?.toLowerCase() ?? '') == 'completed').length;
+            pendingBookings = fetchedBookings.where((booking) =>
+            (booking.status?.toLowerCase() ?? '') == 'scheduled' ||
+                (booking.status?.toLowerCase() ?? '') == 'in progress').length;
+
+            isLoading = false;
+          });
+          print("🎉 UI updated with ${fetchedBookings.length} bookings");
         } catch (e) {
           print("❌ JSON parsing error: $e");
           throw Exception('Failed to parse response: $e');

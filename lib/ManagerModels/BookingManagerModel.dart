@@ -36,14 +36,14 @@ class BookingManagerModel {
     DateTime? bookingDate;
     try {
       if (json['Date'] != null) {
-        bookingDate = DateTime.parse(json['Date']);
+        bookingDate = DateTime.parse(json['Date'].toString());
       }
     } catch (e) {
       bookingDate = null;
     }
 
     // Determine booking status if not provided
-    String status = json['status'] ?? 'Scheduled';
+    String status = json['status']?.toString() ?? 'Scheduled';
     if (status.isEmpty && bookingDate != null) {
       if (bookingDate.isBefore(DateTime.now())) {
         status = 'Completed';
@@ -52,20 +52,21 @@ class BookingManagerModel {
       }
     }
 
+    // Convert all ID fields to strings
     return BookingManagerModel(
-      bookingId: json['BookingID'],
-      carId: json['carID'],
-      carBrand: json['carBrand'],
-      carModel: json['carModel'],
-      year: json['year'],
-      customerName: json['customerName'],
-      customerPhone: json['customerPhone'],
-      serviceType: json['serviceType'],
-      serviceTypeId: json['serviceTypeID'],
+      bookingId: json['BookingID']?.toString(),
+      carId: json['carID']?.toString(),
+      carBrand: json['carBrand']?.toString(),
+      carModel: json['carModel']?.toString(),
+      year: json['year']?.toString(),
+      customerName: json['customerName']?.toString(),
+      customerPhone: json['customerPhone']?.toString(),
+      serviceType: json['serviceType']?.toString(),
+      serviceTypeId: json['serviceTypeID']?.toString(),
       date: bookingDate,
-      time: json['Time'],
+      time: json['Time']?.toString(),
       status: status,
-      notes: json['Note'] ?? json['notes'],
+      notes: json['Note']?.toString() ?? json['notes']?.toString(),
     );
   }
 
