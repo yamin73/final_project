@@ -40,7 +40,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('${serverPath}customers/getAllCustomers.php'),
+        Uri.parse('${serverPath}users/getAllCustomers.php'),
       );
 
       if (response.statusCode == 200) {
