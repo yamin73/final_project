@@ -30,23 +30,17 @@ class Booking {
       bookingDate = DateTime.now(); // Fallback
     }
 
-    // Determine booking status if not provided
-    String status = json['status'] ?? 'Scheduled';
-    if (status.isEmpty) {
-      if (bookingDate.isBefore(DateTime.now())) {
-        status = 'Completed';
-      } else {
-        status = 'Scheduled';
-      }
-    }
+    // Convert numeric IDs to strings safely
+    String bookingId = json['BookingID']?.toString() ?? '';
+    String carId = json['carID']?.toString() ?? '';
 
     return Booking(
-      id: json['BookingID'],
-      carID: json['carID'] ?? '',
+      id: bookingId,
+      carID: carId,
       serviceType: json['serviceTypeName'] ?? 'Unknown Service',
       date: bookingDate,
       timeSlot: json['Time'] ?? 'N/A',
-      status: status,
+      status: json['status'] ?? 'Scheduled',
       notes: json['Note'] ?? '',
       carDetails: json['carDetails'],
     );
