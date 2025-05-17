@@ -17,8 +17,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _biometricEnabled = false;
   String _selectedLanguage = 'English';
   String _selectedCurrency = 'USD';
-  String _userName = 'John Doe';
-  String _userEmail = 'john.doe@example.com';
+  String _userName = 'yamin';
+  String _userPhone = '0584309774';
 
   @override
   void initState() {
@@ -37,8 +37,8 @@ class _SettingsPageState extends State<SettingsPage> {
         _biometricEnabled = prefs.getBool('biometric') ?? false;
         _selectedLanguage = prefs.getString('language') ?? 'English';
         _selectedCurrency = prefs.getString('currency') ?? 'USD';
-        _userName = prefs.getString('userName') ?? 'John Doe';
-        _userEmail = prefs.getString('userEmail') ?? 'john.doe@example.com';
+        _userName = prefs.getString('name') ?? 'John Doe';
+        _userPhone = prefs.getString('phoneNumber') ?? '0584309774';
       });
     } catch (e) {
       print('Error loading preferences: $e');
@@ -263,7 +263,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  _userEmail,
+                  _userPhone,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey.shade600,

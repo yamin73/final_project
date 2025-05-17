@@ -486,14 +486,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to booking screen
-          // Navigator.push(context, MaterialPageRoute(builder: (context) => BookingScreen()));
-        },
-        child: Icon(Icons.add),
-        tooltip: 'New Booking',
-      ),
+
     );
   }
 }

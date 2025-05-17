@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'BookingScreen.dart';
 import 'CarScreen.dart';
 
 class HomePages extends StatelessWidget {
   const HomePages({Key? key}) : super(key: key);
 
+
   @override
   Widget build(BuildContext context) {
+    String _userName = 'John Doe';
+    Future<void> _loadUserPreferences() async {
+      try {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
+          _userName = prefs.getString('name') ?? 'John Doe';
+      } catch (e) {
+        print('Error loading preferences: $e');
+      }
+    }
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
@@ -19,7 +31,7 @@ class HomePages extends StatelessWidget {
               backgroundColor: Colors.blue,
               flexibleSpace: FlexibleSpaceBar(
                 title: Text(
-                  'AutoCare',
+                  'Brothers Garage',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
@@ -55,20 +67,6 @@ class HomePages extends StatelessWidget {
                   ],
                 ),
               ),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.notifications_outlined),
-                  onPressed: () {
-                    // Handle notifications
-                  },
-                ),
-                IconButton(
-                  icon: Icon(Icons.person_outline),
-                  onPressed: () {
-                    // Handle profile
-                  },
-                ),
-              ],
             ),
 
             // Welcome message
@@ -79,7 +77,7 @@ class HomePages extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome, Alex!',
+                      'Welcome',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -502,19 +500,7 @@ class HomePages extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => BookingScreen()
-              )
-          );
-        },
-        label: Text('Book Service'),
-        icon: Icon(Icons.add),
-        backgroundColor: Colors.blue,
-      ),
+
     );
   }
 
