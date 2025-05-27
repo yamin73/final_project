@@ -113,6 +113,21 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     }
   }
 
+
+
+  deleteBooking(bookingID) async {
+    var url = "bookings/deleteBooking.php?bookingID=" + bookingID;
+    final response = await http.get(Uri.parse(serverPath + url));
+    print(serverPath + url);
+    setState(() { });
+    // getFilteredBookings();
+    fetchBookings(userID!);
+  }
+
+
+
+
+
   List<Booking> getFilteredBookings() {
     if (filterStatus == 'All') {
       return bookings;
@@ -414,8 +429,21 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                       isExpanded ? Icons.expand_less : Icons.expand_more,
                                       color: Colors.blue,
                                     ),
+
+                                    IconButton(
+                                      icon: Icon(Icons.delete),
+                                      color: Colors.red, // Optional: change the color to red for delete
+                                      onPressed: () {
+                                        // Handle delete action here
+                                        print('Delete pressed');
+                                        deleteBooking(booking.id);
+                                      },
+                                    )
+
                                   ],
                                 ),
+
+
                               ],
                             ),
                           ),
